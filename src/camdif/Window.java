@@ -24,29 +24,37 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 import java.awt.GridBagConstraints;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JTree;
+import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -56,7 +64,6 @@ import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntDocumentManager;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
-import org.apache.jena.ontology.OntProperty;
 import org.apache.jena.ontology.OntResource;
 import org.apache.jena.ontology.OntTools;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -69,7 +76,12 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.util.iterator.ExtendedIterator;
 import org.apache.jena.vocabulary.RDFS;
-import com.github.jsonldjava.core.RDFDataset.Literal;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.Icon;
@@ -85,9 +97,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.MutableAttributeSet;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
+import javax.swing.table.TableColumnModel;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import java.awt.FlowLayout;
@@ -102,57 +112,87 @@ import java.awt.GridLayout;
 
 public class Window extends JFrame {
 	
+	// window
 	private static Window frame;
+	private static int screenWidth = 700;
+	private static int screenHeight = 600;
+	private static JPanel cards;
+	
+	// flags
 	private static boolean loading;
-	private static JFileChooser fc;
-	private static int result;
-	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM; // change for reasoner
+	private static boolean crawl_go;
+	
+	// ontology
+	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM;
 	private static OntModel ontology;
 	private static OntModel demo_factory;
-	private static OntClass combo_class;
+	
+	// categories
+	private static final String uri_MachineTool = "http://infoneer.txstate.edu/ontology/MSDL_0000070";
+	private static final String uri_3DPrinter = "http://infoneer.txstate.edu/ontology/MSDL_0000680";
+	private static final String uri_Industry = "http://infoneer.txstate.edu/ontology/MSDL_0000686";
+	private static final String uri_Material = "http://infoneer.txstate.edu/ontology/MSDL_0000003";
+	private static final String uri_Software = "http://purl.obolibrary.org/obo/IAO_0000594";
+	private static final String uri_Certification = null; // TODO
 	private static OntClass class_MachineTool;
 	private static OntClass class_3DPrinter;
 	private static OntClass class_Industry;
 	private static OntClass class_Material;
 	private static OntClass class_Software;
 	private static OntClass class_Certification;
-	private Company company;
-	private JComboBox<String> comboBox;
-	private ArrayList<ListNode2> saved_factories;
-	private JList<ListNode> list;
-	private DefaultListModel<ListNode> list_model;
-	private JScrollPane scrollPane_1;
-	private ArrayList<ListNode> equipment_individuals;
-	private ArrayList<ListNode> capability_individuals;
-	private boolean any;
-	private boolean b_3d;
-	private boolean b_machine;
-	private boolean b_industry;
-	private boolean b_material;
-	private boolean b_software;
-	private boolean b_certification;
-	private static String uri_MachineTool = "http://infoneer.txstate.edu/ontology/MSDL_0000070";
-	private static String uri_3DPrinter = "http://infoneer.txstate.edu/ontology/MSDL_0000680";
-	private static String uri_Industry = "http://infoneer.txstate.edu/ontology/MSDL_0000686";
-	private static String uri_Material = "http://infoneer.txstate.edu/ontology/MSDL_0000003";
-	private static String uri_Software = "http://purl.obolibrary.org/obo/IAO_0000594";
-	private static String uri_Certification = null; // TODO
-	private int screenWidth = 700;
-	private int screenHeight = 600;
-	private Color highlight_color = new Color(255, 220, 0);
-	private Color background_color = new Color(235, 235, 235);
-	private Color etched_color1 = Color.LIGHT_GRAY;
-	private Color etched_color2 = new Color(242, 242, 242);
-	private Color tab_color1 = new Color(220, 220, 220);
-	private Color tab_color2 = new Color(205, 205, 205);
-	private String s_3d = "<html><b>3D Printers</b></html>";
-	private String s_machine = "<html><b>Machine Tools</b></html>";
-	private String s_industry = "<html><b>Industries</b></html>";
-	private String s_material = "<html><b>Materials</b></html>";
-	private String s_software = "<html><b>Software</b></html>";
-	private String s_certification = "<html><b>Certifications</b></html>";
 	
-	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {		
+	// build headers
+	private static String s_3d = "<html><b>3D Printers</b></html>";
+	private static String s_machine = "<html><b>Machine Tools</b></html>";
+	private static String s_industry = "<html><b>Industries</b></html>";
+	private static String s_material = "<html><b>Materials</b></html>";
+	private static String s_software = "<html><b>Software</b></html>";
+	private static String s_certification = "<html><b>Certifications</b></html>";
+	private static boolean any;
+	private static boolean b_3d;
+	private static boolean b_machine;
+	private static boolean b_industry;
+	private static boolean b_material;
+	private static boolean b_software;
+	private static boolean b_certification;
+	
+	// build
+	private static Company company;
+	private static ArrayList<ListNode> equipment_individuals;
+	private static ArrayList<ListNode> capability_individuals;
+	private static ArrayList<ListNode2> saved_factories;
+	private static OntClass combo_class;
+	private static JComboBox<String> comboBox;
+	private static JList<ListNode> list;
+	private static DefaultListModel<ListNode> list_model;
+	private static JScrollPane scrollPane_1;
+	
+	// file chooser
+	private static JFileChooser fc;
+	private static int result;
+	
+	// analysis
+	private static ArrayList<TableNode> exp_functions;
+	private static ArrayList<TableNode> inf_functions;
+	private static ArrayList<TableNode> exp_materials;
+	private static ArrayList<TableNode> inf_materials;
+	
+	// parsing
+	private static JsonNode rn;
+	private static ArrayList<JsonNodeWrapper> thesaurus_concepts;
+	private static JTable parsing_table;
+	private static Map<String, Integer> link_depths;
+	
+	// colors
+	private static Color highlight_color = new Color(255, 220, 0);
+	private static Color background_color = new Color(235, 235, 235);
+	private static Color etched_color1 = Color.LIGHT_GRAY;
+	private static Color etched_color2 = new Color(242, 242, 242);
+	private static Color tab_color1 = new Color(220, 220, 220);
+	private static Color tab_color2 = new Color(205, 205, 205);
+	
+	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {	
+		
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
@@ -179,6 +219,7 @@ public class Window extends JFrame {
 				}
 			}
 		});
+		
 	}
 	
 	public Window() {
@@ -189,11 +230,17 @@ public class Window extends JFrame {
 	
 	public Window(String frame_title) {
 		super(frame_title);
-	
+		
+		crawl_go = false;
 		company = new Company();
 		saved_factories = new ArrayList<ListNode2>();
 		equipment_individuals = new ArrayList<ListNode>();
 		capability_individuals = new ArrayList<ListNode>();
+		exp_functions = new ArrayList<TableNode>();
+		inf_functions = new ArrayList<TableNode>();
+		exp_materials = new ArrayList<TableNode>();
+		inf_materials = new ArrayList<TableNode>();
+		link_depths = new LinkedHashMap<>();
 		
 		class_MachineTool = ontology.getOntClass(uri_MachineTool);
 		class_3DPrinter = ontology.getOntClass(uri_3DPrinter);
@@ -270,6 +317,8 @@ public class Window extends JFrame {
 		UIManager.put("Table.foreground", Color.DARK_GRAY);
 		UIManager.put("TableHeader.foreground", Color.DARK_GRAY);
 		UIManager.put("TableHeader.cellBorder", BorderFactory.createMatteBorder(0, 0, 1, 1, tab_color2));
+		UIManager.put("CheckBox.foreground", Color.DARK_GRAY);
+		UIManager.put("CheckBox.background", tab_color1);
 		
 		try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); } catch(Exception e) { System.out.println("Error 2 setting Java LAF: " + e); }
 		
@@ -277,7 +326,8 @@ public class Window extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
 		
-		company.setName("Default Factory");
+		company.setName("Default");
+		company.setURL("https://en.wikipedia.org/wiki/Factory");
 		company.setType("Contract manufacturer");
 		company.setBusinessType("Small business manufacturing company");
 		equipment_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000250"), class_MachineTool, ""));
@@ -292,8 +342,9 @@ public class Window extends JFrame {
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000829"), class_Material, ""));
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000783"), class_Software, ""));
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000776"), class_Software, ""));
-		demo_factory = generateFinalFactory();
+		demo_factory = generateFinalFactory(true, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "");
 		saved_factories.add(new ListNode2(demo_factory, "Default Factory"));
+		
 		company = new Company();
 		equipment_individuals = new ArrayList<ListNode>();
 		capability_individuals = new ArrayList<ListNode>();
@@ -306,9 +357,22 @@ public class Window extends JFrame {
 		SwingWorker<?,?> worker = new SwingWorker<Void,Void>() {
 			@Override
 			protected Void doInBackground() {
-				ontology = ModelFactory.createOntologyModel(modelSpec);
-				ontology.read("ontologies/MSDL.owl", "RDF/XML");
-	            return null;
+				try {
+					ObjectMapper mapper = new ObjectMapper();
+		            //mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);                 
+		            rn = mapper.readTree(getClass().getResource("/information/thesaurus.rj"));
+					ontology = ModelFactory.createOntologyModel(modelSpec);
+					ontology.read("information/MSDL.owl", "RDF/XML");
+					thesaurus_concepts = new ArrayList<JsonNodeWrapper>();
+					for(JsonNode n : rn) {
+						if(n.get("http://www.w3.org/2004/02/skos/core#topConceptOf") == null)
+							thesaurus_concepts.add(new JsonNodeWrapper(n));
+					}
+				} catch(Exception e1) {
+					e1.printStackTrace();
+					System.exit(0);
+				}
+				return null;
 			}
 			
 			@Override
@@ -347,7 +411,7 @@ public class Window extends JFrame {
 		return c;
 	}
 	
-	public String generateID(OntModel model) {
+	private String generateID(OntModel model) {
 		String ID_prefix = "http://infoneer.txstate.edu/ontology/MSDL_9999999";
 		String ID;
 		Resource ID_resource;
@@ -437,7 +501,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
-	public void refresh_certification() {
+	private void refresh_certification() {
 		for(int i = 0; i < capability_individuals.size(); i++) {
 			if(capability_individuals.get(i).getCategoryClass().equals(class_Certification)) {
 				if(!b_certification) {
@@ -452,7 +516,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
-	public boolean refreshList(boolean first_page, OntClass added) {
+	private boolean refreshList(boolean first_page, OntClass added) {
 		list_model.removeAllElements();
 		any = false;
 		b_3d = false;
@@ -524,8 +588,37 @@ public class Window extends JFrame {
 		return r;
 	}
 	
-	public boolean isCategoryOf(OntClass child, OntClass category) {
-		return (OntTools.findShortestPath(child.getOntModel(), child, category, new OntTools.PredicatesFilter(RDFS.subClassOf)) != null);
+	private OntClass accountRestrictions(OntClass c) {
+		if(c.isIntersectionClass()) {
+			for(ExtendedIterator<?> i = c.asIntersectionClass().listOperands(); i.hasNext(); ) {
+			      OntClass op = (OntClass)i.next();
+			      if(!op.isRestriction()) {
+			    	  c = op;
+			    	  break;
+			      }
+			}
+		}
+		if(c.isUnionClass()) {
+			for(ExtendedIterator<?> i = c.asUnionClass().listOperands(); i.hasNext(); ) {
+			      OntClass op = (OntClass)i.next();
+			      if(!op.isRestriction()) {
+			    	  c = op;
+			    	  break;
+			      }
+			}
+		}
+		return c;
+	}
+	
+	private boolean isCategoryOf(OntClass child, OntClass category) {
+		if(OntTools.findShortestPath(child.getOntModel(), child, category, new OntTools.PredicatesFilter(RDFS.subClassOf)) != null || child.equals(category))
+			return true;
+		if(child.hasSuperClass()) {
+			OntClass sc = child.getSuperClass();
+			if(sc.isIntersectionClass() || sc.isUnionClass())
+				return isCategoryOf(accountRestrictions(sc), category);
+		}
+		return false;
 	}
 	
 	private void configureFileChooserUI(Component[] components, boolean save) {
@@ -573,7 +666,330 @@ public class Window extends JFrame {
 		}
 	}
 	
-	public OntModel generateFinalFactory() {
+	private void setCompanyInfo(OntModel factory) {
+		equipment_individuals = new ArrayList<ListNode>();
+		capability_individuals = new ArrayList<ListNode>();
+		company = new Company();
+		
+		try { company.setName(factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000149")).getObject().asResource().getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+		try { company.setEmployess(((int)Double.parseDouble(factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000874")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().asLiteral().getLexicalForm())) + ""); } catch(Exception e) {}
+		try { company.setYearFounded(""); } catch(Exception e) {} // TODO
+		try { company.setURL(factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000876")).getObject().asResource().getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+			
+		String bt = getOntClassOf(factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991")).toString();
+		if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000873"))
+			try { company.setBusinessType("Small business manufacturing company"); } catch(Exception e) {}
+		else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000872"))
+			try { company.setBusinessType("Veteran-owned manufacturing company"); } catch(Exception e) {}
+		else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000871"))
+			try { company.setBusinessType("Woman-owned manufacturing company"); } catch(Exception e) {}
+		else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000870"))
+			try { company.setBusinessType("Minority-owned manufacturing company"); } catch(Exception e) {}
+		else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000017"))
+			try { company.setBusinessType("Other"); } catch(Exception e) {}
+			
+		String ct = factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000877")).getObject().toString();
+		if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000868"))
+			try { company.setType("Original design manufacturer"); } catch(Exception e) {}
+		else if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000867"))
+			try { company.setType("Original equipment manufacturer"); } catch(Exception e) {}
+		else if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000866"))
+			try { company.setType("Contract manufacturer"); } catch(Exception e) {}
+		else if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000865"))
+			try { company.setType("Other"); } catch(Exception e) {}
+			
+		RDFNode street_thing = null, city_thing = null, state_thing = null, zip_thing = null;
+		for(NodeIterator n = factory.listObjectsOfProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000875")); n.hasNext(); ) {
+			try {
+				RDFNode address_thing = n.next();
+				for(ExtendedIterator<Statement> s = factory.listStatements(); s.hasNext(); ) {
+					Statement statement_thing = s.next();
+					Resource subject = statement_thing.getSubject();
+					String predicate = statement_thing.getPredicate().toString();
+					String object = statement_thing.getObject().toString();
+					if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000840"))
+						street_thing = address_thing;
+					if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000838"))
+						city_thing = address_thing;
+					if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000841"))
+						state_thing = address_thing;
+					if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000839"))
+						zip_thing = address_thing;
+				}
+			} catch(Exception e) {}
+		}
+		for(ExtendedIterator<Statement> s = factory.listStatements(); s.hasNext(); ) {
+			Statement statement_thing = s.next();
+			Resource subject = statement_thing.getSubject();
+			String predicate = statement_thing.getPredicate().toString();
+			if(subject.equals(street_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
+				try { company.setAddress(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+			else if(subject.equals(city_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
+				try { company.setCity(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+			else if(subject.equals(state_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
+				try { company.setState(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+			else if(subject.equals(zip_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
+				try { company.setZip(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+		}
+
+		for(NodeIterator n = factory.listObjects(); n.hasNext(); ) {
+			RDFNode obj = n.next();
+			Individual indiv = null;
+			OntClass category_class = null;
+			
+			try {
+				indiv = ontology.getIndividual(obj.toString());
+				if(isCategoryOf(getOntClassOf(indiv), class_3DPrinter))
+					category_class = class_3DPrinter;
+				else if(isCategoryOf(getOntClassOf(indiv), class_MachineTool))
+					category_class = class_MachineTool;
+
+				if(category_class != null) {
+					boolean exists = false;
+					for(int x = 0; x < equipment_individuals.size(); x++) {
+						if(equipment_individuals.get(x).getIndividual().getURI().equals(indiv.getURI())) {
+							exists = true;
+							x = equipment_individuals.size();
+						}
+					}
+					if(!exists)
+						equipment_individuals.add(new ListNode(indiv, category_class, ""));
+				}
+			} catch(Exception aaa) {}
+		}
+		for(NodeIterator n = factory.listObjects(); n.hasNext(); ) {
+			RDFNode obj = n.next();
+			Individual indiv = null;
+			OntClass category_class = null;
+			
+			try {
+				indiv = ontology.getIndividual(obj.toString());
+				if(isCategoryOf(getOntClassOf(indiv), class_Industry))
+					category_class = class_Industry;
+				else if(isCategoryOf(getOntClassOf(indiv), class_Material))
+					category_class = class_Material;
+				else if(isCategoryOf(getOntClassOf(indiv), class_Software))
+					category_class = class_Software;
+				else if(isCategoryOf(getOntClassOf(indiv), class_Certification))
+					category_class = class_Certification;
+					
+				if(category_class != null) {
+					boolean exists = false;
+					for(int x = 0; x < capability_individuals.size(); x++) {
+						if(capability_individuals.get(x).getIndividual().getURI().equals(indiv.getURI())) {
+							exists = true;
+							x = capability_individuals.size();
+						}
+					}
+					if(!exists)
+						capability_individuals.add(new ListNode(indiv, category_class, ""));
+				}
+			} catch(Exception aaa) {}
+		}
+	}
+	
+	private Image getScaledImage(Image srcImg, int w, int h) {
+	    BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g2 = resizedImg.createGraphics();
+	    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+	    g2.drawImage(srcImg, 0, 0, w, h, null);
+	    g2.dispose();
+	    return resizedImg;
+	}
+	
+	private String getTopConceptName(JsonNode rootNode, JsonNode j) {
+		if(j.get("http://www.w3.org/2004/02/skos/core#broader") != null)
+			return getTopConceptName(rootNode, rootNode.get(j.get("http://www.w3.org/2004/02/skos/core#broader").get(0).get("value").asText()));
+		else if(j.get("http://www.w3.org/2004/02/skos/core#topConceptOf") != null) {
+			try {
+				return j.get("http://www.w3.org/2004/02/skos/core#prefLabel").get(0).get("value").asText().trim();
+			} catch(Exception e) { return ""; }
+		}
+		return "";
+	}
+	
+	public static String getHostName(String url) {
+		if(url == null || url.length() == 0)
+			return "";
+
+		int doubleslash = url.indexOf("//");
+		if(doubleslash == -1)
+			doubleslash = 0;
+		else
+			doubleslash += 2;
+
+		int end = url.indexOf('/', doubleslash);
+		end = end >= 0 ? end : url.length();
+
+		int port = url.indexOf(':', doubleslash);
+		end = (port > 0 && port < end) ? port : end;
+
+		String host = url.substring(doubleslash, end);
+		return host.startsWith("www.") ? host.substring(4) : host;
+	}
+	
+	private String getLinkText(String url, int depth, boolean footer_gotten) {
+		ArrayList<String> visited = new ArrayList<>();
+		visited.add(url.replaceAll("www.", "").replaceAll("https://", "").replaceAll("http://", "").replaceAll("Http://", "").replaceAll("HTTP://", ""));
+		String text = " ";
+		String host_domain = getHostName(url);
+		int current_depth = 0, cap = 100000;
+		while(current_depth <= depth && text.replaceAll("\\s+", " ").length() < cap) {
+			Map<String, Integer> to_add = new LinkedHashMap<>();
+			for(Map.Entry<String, Integer> ld : link_depths.entrySet()) {
+				if(!crawl_go)
+					return "";
+				if(ld.getValue() == current_depth) {
+					Document doc = null;
+					String current_link = ld.getKey();
+					boolean connected = false;
+					try {
+						doc = Jsoup.connect(current_link).get();
+						connected = true;
+					} catch(Exception e1) {
+						if(url.substring(0, 5).equals("https")) {
+							try {
+								doc = Jsoup.connect("http" + current_link.substring(5)).get();
+								connected = true;
+							} catch(Exception e2) {}
+						}
+						else {
+							try {
+								doc = Jsoup.connect("http://" + current_link).get();
+								connected = true;
+							} catch(Exception e2) {}
+						}
+					}
+
+					if(connected) {
+						if(current_depth < depth) {
+							Elements new_links = doc.select("a[href]");
+							for(Element new_link : new_links) {
+								String test_key = new_link.attr("abs:href").replaceAll("www.", "").replaceAll("https://", "").replaceAll("http://", "").replaceAll("Http://", "").replaceAll("HTTP://", "");
+								if(test_key.lastIndexOf('#') != -1)
+									test_key = test_key.substring(0, test_key.lastIndexOf('#'));
+								if(!visited.contains(test_key)) {
+									try {
+										String link_domain = getHostName(new_link.attr("abs:href"));
+										if(link_domain.equals(host_domain))
+											to_add.put(new_link.attr("abs:href"), current_depth + 1);
+									} catch(Exception e) {}
+								}
+							}
+						}
+						
+						String body_text = doc.body().text(), footer_text = "";
+						
+						if(doc.select("footer").isEmpty()) {
+							if(footer_gotten) {
+								for(Element e : doc.select("#footer"))
+									body_text.replaceFirst(e.text(), "");
+							}
+						}
+						else {
+							if(footer_gotten) {
+								for(Element e : doc.select("footer"))
+									body_text.replaceFirst(e.text(), "");
+							}
+						}
+						
+						footer_gotten = true;
+						text += body_text + " " + footer_text + " ";
+						if(text.replaceAll("\\s+", " ").length() >= cap)
+							return text;
+					}
+				}
+			}
+			for(Map.Entry<String, Integer> e : to_add.entrySet()) {
+				String key = e.getKey().replaceAll("www.", "").replaceAll("https://", "").replaceAll("http://", "").replaceAll("Http://", "").replaceAll("HTTP://", "");
+				if(key.lastIndexOf('#') != -1)
+					key = key.substring(0, key.lastIndexOf('#'));
+				link_depths.put(e.getKey(), e.getValue());
+				visited.add(key);
+			}
+			current_depth++;
+		}
+
+		return text;
+	}
+	
+	private Map<JsonNodeWrapper, Integer> crawl(String url, int depth) {
+		link_depths.put(url, 0);
+		String master_text = "  " + getLinkText(url, depth, false).toLowerCase().replaceAll("&", " and ").trim().replaceAll("\\s+", " ") + "  ";
+		Map<JsonNodeWrapper, Integer> matched_concepts = new LinkedHashMap<>();
+		Pattern p;
+		Matcher m;
+		
+		for(JsonNodeWrapper n : thesaurus_concepts) {
+			if(!crawl_go)
+				return new LinkedHashMap<>();
+			String matching_name = n.getMatchingName();
+			String matching_name_alt = n.getMatchingNameAlt();
+			int total_occurrences = 0;
+			if(!matching_name.isEmpty()) {
+				int occurrences1 = 0, occurrences2 = 0, occurrences3 = 0;
+				p = Pattern.compile("[()\\s.?,\'\"!]" + matching_name + "(?=\\(|\\)|\\s|\\.|\\?|\\!|\\,|\\-|\'|\"|s\\(|s\\)|s\\s|s\\.|s\\?|s\\!|s\\,|s\\-|s\'|s\"|es\\(|es\\)|es\\s|es\\.|es\\?|es\\!|es\\,|es\\-|es\'|es\")", Pattern.CASE_INSENSITIVE);
+				m = p.matcher(master_text);
+				while(m.find())
+					occurrences1++;
+				if(matching_name.substring(matching_name.length() - 1, matching_name.length()).equals("s")) {
+					p = Pattern.compile("[()\\s.?,\'\"!]" + matching_name.substring(0, matching_name.length() - 1) + "(?=\\(|\\)|\\s|\\.|\\?|\\!|\\,|\\-|\'|\"|s\\(|s\\)|s\\s|s\\.|s\\?|s\\!|s\\,|s\\-|s\'|s\"|es\\(|es\\)|es\\s|es\\.|es\\?|es\\!|es\\,|es\\-|es\'|es\")", Pattern.CASE_INSENSITIVE);
+					m = p.matcher(master_text);
+					while(m.find())
+						occurrences2++;
+				}
+				if(matching_name.substring(matching_name.length() - 2, matching_name.length()).equals("es")) {
+					p = Pattern.compile("[()\\s.?,\'\"!]" + matching_name.substring(0, matching_name.length() - 2) + "(?=\\(|\\)|\\s|\\.|\\?|\\!|\\,|\\-|\'|\"|s\\(|s\\)|s\\s|s\\.|s\\?|s\\!|s\\,|s\\-|s\'|s\"|es\\(|es\\)|es\\s|es\\.|es\\?|es\\!|es\\,|es\\-|es\'|es\")", Pattern.CASE_INSENSITIVE);
+					m = p.matcher(master_text);
+					while(m.find())
+						occurrences3++;
+				}
+				else if(occurrences2 > occurrences1 && occurrences2 > occurrences3)
+					total_occurrences += occurrences2;
+				else if(occurrences3 > occurrences1 && occurrences3 > occurrences2)
+					total_occurrences += occurrences3;
+				else
+					total_occurrences += occurrences1;
+			}
+			if(!matching_name_alt.isEmpty()) {
+				int alt_occurrences1 = 0, alt_occurrences2 = 0, alt_occurrences3 = 0;
+				p = Pattern.compile("[()\\s.?,\'\"!]" + matching_name_alt + "(?=\\(|\\)|\\s|\\.|\\?|\\!|\\,|\\-|\'|\"|s\\(|s\\)|s\\s|s\\.|s\\?|s\\!|s\\,|s\\-|s\'|s\"|es\\(|es\\)|es\\s|es\\.|es\\?|es\\!|es\\,|es\\-|es\'|es\")", Pattern.CASE_INSENSITIVE);
+				m = p.matcher(master_text);
+				while(m.find())
+					alt_occurrences1++;
+				if(matching_name_alt.substring(matching_name_alt.length() - 1, matching_name_alt.length()).equals("s")) {
+					p = Pattern.compile("[()\\s.?,\'\"!]" + matching_name_alt.substring(0, matching_name_alt.length() - 1) + "(?=\\(|\\)|\\s|\\.|\\?|\\!|\\,|\\-|\'|\"|s\\(|s\\)|s\\s|s\\.|s\\?|s\\!|s\\,|s\\-|s\'|s\"|es\\(|es\\)|es\\s|es\\.|es\\?|es\\!|es\\,|es\\-|es\'|es\")", Pattern.CASE_INSENSITIVE);
+					m = p.matcher(master_text);
+					while(m.find())
+						alt_occurrences2++;
+				}
+				if(matching_name_alt.substring(matching_name_alt.length() - 2, matching_name_alt.length()).equals("es")) {
+					p = Pattern.compile("[()\\s.?,\'\"!]" + matching_name_alt.substring(0, matching_name_alt.length() - 2) + "(?=\\(|\\)|\\s|\\.|\\?|\\!|\\,|\\-|\'|\"|s\\(|s\\)|s\\s|s\\.|s\\?|s\\!|s\\,|s\\-|s\'|s\"|es\\(|es\\)|es\\s|es\\.|es\\?|es\\!|es\\,|es\\-|es\'|es\")", Pattern.CASE_INSENSITIVE);
+					m = p.matcher(master_text);
+					while(m.find())
+						alt_occurrences3++;
+				}
+				else if(alt_occurrences2 > alt_occurrences1 && alt_occurrences2 > alt_occurrences3)
+					total_occurrences += alt_occurrences2;
+				else if(alt_occurrences3 > alt_occurrences1 && alt_occurrences3 > alt_occurrences2)
+					total_occurrences += alt_occurrences3;
+				else
+					total_occurrences += alt_occurrences1;
+			}
+			if(total_occurrences != 0)
+				matched_concepts.put(n, total_occurrences);
+		}
+
+		Map<JsonNodeWrapper, Integer> matched_concepts_desc = new LinkedHashMap<>();
+		matched_concepts.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).forEach(entry -> matched_concepts_desc.put(entry.getKey(), entry.getValue()));
+		return matched_concepts_desc;
+	}
+	
+	private OntModel generateFinalFactory(boolean from_build, boolean include_factory_file, String inf_complexity, String inf_variety, String inf_range,
+			String inf_min_tolerance, String inf_max_tolerance, String inf_min_length, String inf_max_length,
+			String inf_min_diameter, String inf_max_diameter, String inf_min_roughness, String inf_max_roughness,
+			String inf_min_thickness, String inf_max_thickness, String inf_max_weight) {
+		
 		OntModel factory = ModelFactory.createOntologyModel(modelSpec);
 		factory.setStrictMode(false);
 		Individual company_indiv;
@@ -590,34 +1006,27 @@ public class Window extends JFrame {
 			company_indiv = factory.createIndividual(generateID(factory), ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000870"));
 		else {
 			company_indiv = factory.createIndividual(generateID(factory), ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000017"));
-			//company_indiv.addComment("Company has business type: Manufacturing company", "en");
 			company_comment += "\nBusiness type: Manufacturing company";
 			other = true;
 		}
-		if(!other) {
-			//company_indiv.addComment("Company has business type: " + company.getBusinessType().trim(), "en");
+		if(!other)
 			company_comment += "\nBusiness type: " + company.getBusinessType().trim();
-		}
 		
 		Property prop_hasCompanyType = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000877");
 		if(company.getType().trim().equals("Original design manufacturer")) {
 			company_indiv.addProperty(prop_hasCompanyType, ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000868"));
-			//company_indiv.addComment("Company has company type: Original design manufacturer", "en");
 			company_comment += "\nCompany type: Original design manufacturer";
 		}
 		else if(company.getType().trim().equals("Original equipment manufacturer")) {
 			company_indiv.addProperty(prop_hasCompanyType, ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000867"));
-			//company_indiv.addComment("Company has company type: Original equipment manufacturer", "en");
 			company_comment += "\nCompany type: Original equipment manufacturer";
 		}
 		else if(company.getType().trim().equals("Contract manufacturer")) {
 			company_indiv.addProperty(prop_hasCompanyType, ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000866"));
-			//company_indiv.addComment("Company has company type: Contract manufacturer", "en");
 			company_comment += "\nCompany type: Contract manufacturer";
 		}
 		else {
 			company_indiv.addProperty(prop_hasCompanyType, ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000865"));
-			//company_indiv.addComment("Company has company type: Other", "en");
 			company_comment += "\nCompany type: Other";
 		}
 		
@@ -625,7 +1034,6 @@ public class Window extends JFrame {
 		Individual company_name = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000878"));
 		company_name.setLabel(company.getName().trim(), "en");
 		company_indiv.addProperty(prop_hasName, company_name);
-		//company_indiv.addComment("Company has name: " + company.getName().trim(), "en");
 		company_comment += "\nName: " + company.getName().trim();
 
 		if(!(company.getEmployees().equals(""))) {
@@ -640,7 +1048,6 @@ public class Window extends JFrame {
 				employees_count = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000194"));
 				employees_count.addProperty(prop_isQualMeasAs, employees_cmd);
 				company_indiv.addProperty(prop_hasNumEmployees, employees_count);
-				//company_indiv.addComment("Company has number of employees: " + company.getEmployees().replaceAll(",", "").trim(), "en");
 				company_comment += "\nEmployee count: " + company.getEmployees().replaceAll(",", "").trim();
 			} catch(Exception e) {
 				if(employees_cmd != null)
@@ -659,7 +1066,6 @@ public class Window extends JFrame {
 			Individual web_address = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000864"));
 			web_address.setLabel(company.getURL().trim(), "en");
 			company_indiv.addProperty(prop_hasWebAddress, web_address);
-			//company_indiv.addComment("Company has web address: " + company.getURL().trim(), "en");
 			company_comment += "\nWeb address: " + company.getURL().trim();
 		}
 		
@@ -668,82 +1074,203 @@ public class Window extends JFrame {
 			Individual street_address = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000840"));
 			street_address.setLabel(company.getAddress().trim(), "en");
 			company_indiv.addProperty(prop_hasPhysicalAddress, street_address);
-			//company_indiv.addComment("Company has street address: " + company.getAddress().trim(), "en");
 			company_comment += "\nStreet address: " + company.getAddress().trim();
 		}
 		if(!(company.getCity().equals(""))) {
 			Individual city = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000838"));
 			city.setLabel(company.getCity().trim(), "en");
 			company_indiv.addProperty(prop_hasPhysicalAddress, city);
-			//company_indiv.addComment("Company has city address: " + company.getCity().trim(), "en");
 			company_comment += "\nCity address: " + company.getCity().trim();
 		}
 		if(!(company.getState().equals(""))) {
 			Individual state = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000841"));
 			state.setLabel(company.getState().trim(), "en");
 			company_indiv.addProperty(prop_hasPhysicalAddress, state);
-			//company_indiv.addComment("Company has state address: " + company.getState().trim(), "en");
 			company_comment += "\nState address: " + company.getState().trim();
 		}
 		if(!(company.getZip().equals(""))) {
 			Individual zip = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000839"));
 			zip.setLabel(company.getZip().trim(), "en");
 			company_indiv.addProperty(prop_hasPhysicalAddress, zip);
-			//company_indiv.addComment("Company has zip address: " + company.getZip().trim(), "en");
 			company_comment += "\nZip address: " + company.getZip().trim();
 		}
 
 		Individual factory_indiv = factory.createIndividual(generateID(factory), ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000090"));
-		String factory_comment = company.getName() + " factory information:";
+		String factory_comment = "";
 		Property prop_operates = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000679");
 		Property prop_hasFactoryEquipment = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000129");
 		Property prop_hasMaterialCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000770");
 		Property prop_hasIndustryCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000769");
 		Property prop_hasSoftwareCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000771");
 		// Property prop_hasCertificateCapability = ; TODO
-		for(int x = 0; x < equipment_individuals.size(); x++) {
-			ListNode l = equipment_individuals.get(x);
-			Individual i = l.getIndividual();
-			OntClass c = l.getCategoryClass();
-			String s = c.getURI();
-			if(s.equals(uri_3DPrinter)) {
-				factory_indiv.addProperty(prop_hasFactoryEquipment, i);
-				//factory_indiv.addComment("Factory has equipement: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(), "en");
-				factory_comment += "\nEquipment: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+		
+		if(from_build || include_factory_file) {
+			for(int x = 0; x < equipment_individuals.size(); x++) {
+				ListNode l = equipment_individuals.get(x);
+				Individual i = l.getIndividual();
+				OntClass c = l.getCategoryClass();
+				String s = c.getURI();
+				if(s.equals(uri_3DPrinter)) {
+					factory_indiv.addProperty(prop_hasFactoryEquipment, i);
+					factory_comment += "\nEquipment: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+				}
+				else if(s.equals(uri_MachineTool)) {
+					factory_indiv.addProperty(prop_hasFactoryEquipment, i);
+					factory_comment += "\nEquipment: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+				}
 			}
-			else if(s.equals(uri_MachineTool)) {
-				factory_indiv.addProperty(prop_hasFactoryEquipment, i);
-				//factory_indiv.addComment("Factory has equipement: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(), "en");
-				factory_comment += "\nEquipment: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+			
+			for(int x = 0; x < capability_individuals.size(); x++) {
+				ListNode l = capability_individuals.get(x);
+				Individual i = l.getIndividual();
+				OntClass c = l.getCategoryClass();
+				String s = c.getURI();
+				if(s.equals(uri_Material)) {
+					factory_indiv.addProperty(prop_hasMaterialCapability, i);
+					factory_comment += "\nMaterial: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+				}
+				else if(s.equals(uri_Industry)) {
+					company_indiv.addProperty(prop_hasIndustryCapability, i);
+					company_comment += "\nIndustry: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+				}
+				else if(s.equals(uri_Software)) {
+					company_indiv.addProperty(prop_hasSoftwareCapability, i);
+					company_comment += "\nSoftware: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+				}
+				else if(s.equals(uri_Certification)) {
+					// TODO
+				}
 			}
 		}
-		for(int x = 0; x < capability_individuals.size(); x++) {
-			ListNode l = capability_individuals.get(x);
-			Individual i = l.getIndividual();
-			OntClass c = l.getCategoryClass();
-			String s = c.getURI();
-			if(s.equals(uri_Material)) {
-				company_indiv.addProperty(prop_hasMaterialCapability, i);
-				//company_indiv.addComment("Company has material capability: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(), "en");
-				company_comment += "\nMaterial capability: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+		
+		if(!from_build) {
+			Property prop_hasMinTolerance = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000928");
+			Property prop_hasMaxTolerance = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000970");
+			Property prop_hasMinLength = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000935");
+			Property prop_hasMaxLength = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000936");
+			Property prop_hasMinDiameter = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000933");
+			Property prop_hasMaxDiameter = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000934");
+			Property prop_hasMinRoughness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000932");
+			Property prop_hasMaxRoughness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000931");
+			Property prop_hasMinThickness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000930");
+			Property prop_hasMaxThickness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000929");
+			Property prop_hasMaxWeight = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000954");
+			Property prop_hasProcessCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000995");
+			Property prop_hasVarietyCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000966");
+			
+			// part quality capability
+			if(!inf_min_tolerance.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000675"));
+				i.setLabel(inf_min_tolerance, "en");
+				factory_indiv.addProperty(prop_hasMinTolerance, i);
+				factory_comment += "\nPart lower tolerance capability (inch): " + inf_min_tolerance;
 			}
-			else if(s.equals(uri_Industry)) {
-				company_indiv.addProperty(prop_hasIndustryCapability, i);
-				//company_indiv.addComment("Company has industry capability: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(), "en");
-				company_comment += "\nIndustry capability: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+			if(!inf_max_tolerance.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000675"));
+				i.setLabel(inf_max_tolerance, "en");
+				factory_indiv.addProperty(prop_hasMaxTolerance, i);
+				factory_comment += "\nPart upper tolerance capability (inch): " + inf_max_tolerance;
 			}
-			else if(s.equals(uri_Software)) {
-				company_indiv.addProperty(prop_hasSoftwareCapability, i);
-				//company_indiv.addComment("Company has software capability: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(), "en");
-				company_comment += "\nSoftware capability: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+			if(!inf_min_length.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000674"));
+				i.setLabel(inf_min_length, "en");
+				factory_indiv.addProperty(prop_hasMinLength, i);
+				factory_comment += "\nPart minimum length capability (inch): " + inf_min_length;
 			}
-			else if(s.equals(uri_Certification)) {
-				// TODO
+			if(!inf_max_length.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000674"));
+				i.setLabel(inf_max_length, "en");
+				factory_indiv.addProperty(prop_hasMaxLength, i);
+				factory_comment += "\nPart maximum length capability (inch): " + inf_max_length;
 			}
+			if(!inf_min_diameter.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000919"));
+				i.setLabel(inf_min_diameter, "en");
+				factory_indiv.addProperty(prop_hasMinDiameter, i);
+				factory_comment += "\nPart minimum diameter capability (inch): " + inf_min_diameter;
+			}
+			if(!inf_max_diameter.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000919"));
+				i.setLabel(inf_max_diameter, "en");
+				factory_indiv.addProperty(prop_hasMaxDiameter, i);
+				factory_comment += "\nPart maximum diameter capability (inch): " + inf_max_diameter;
+			}
+			if(!inf_min_roughness.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000920"));
+				i.setLabel(inf_min_roughness, "en");
+				factory_indiv.addProperty(prop_hasMinRoughness, i);
+				factory_comment += "\nPart surface finish lower capability (microinch): " + inf_min_roughness;
+			}
+			if(!inf_max_roughness.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000920"));
+				i.setLabel(inf_max_roughness, "en");
+				factory_indiv.addProperty(prop_hasMaxRoughness, i);
+				factory_comment += "\nPart surface finish upper capability (microinch): " + inf_max_roughness;
+			}
+			if(!inf_min_thickness.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000921"));
+				i.setLabel(inf_min_thickness, "en");
+				factory_indiv.addProperty(prop_hasMinThickness, i);
+				factory_comment += "\nMinimum wall thickness lower capability (inch): " + inf_min_thickness;
+			}
+			if(!inf_max_thickness.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000921"));
+				i.setLabel(inf_max_thickness, "en");
+				factory_indiv.addProperty(prop_hasMaxThickness, i);
+				factory_comment += "\nMinimum wall thickness upper capability (inch): " + inf_max_thickness; // TODO both wall min?
+			}
+			if(!inf_max_weight.equals("") && !inf_max_weight.equals(" - ")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000955"));
+				i.setLabel(inf_max_weight, "en");
+				factory_indiv.addProperty(prop_hasMaxWeight, i);
+				factory_comment += "\nPart max weight capability (lb): " + inf_max_weight;
+			}
+			
+			// process capability
+			for(int x = 0; x < exp_functions.size(); x++) {
+				TableNode tn = exp_functions.get(x);
+				factory_indiv.addProperty(prop_hasProcessCapability, tn.getIndividual());
+				factory_comment += "\nProcess capability: " + tn.toString();
+			}
+			for(int x = 0; x < inf_functions.size(); x++) {
+				TableNode tn = inf_functions.get(x);
+				factory_indiv.addProperty(prop_hasProcessCapability, tn.getIndividual());
+				factory_comment += "\nProcess capability: " + tn.toString();
+			}
+			
+			// material capability
+			for(int x = 0; x < exp_materials.size(); x++) {
+				TableNode tn = exp_materials.get(x);
+				factory_indiv.addProperty(prop_hasMaterialCapability, tn.getIndividual());
+				factory_comment += "\nMaterial capability: " + tn.toString();
+			}
+			for(int x = 0; x < inf_materials.size(); x++) {
+				TableNode tn = inf_materials.get(x);
+				factory_indiv.addProperty(prop_hasMaterialCapability, tn.getIndividual());
+				factory_comment += "\nMaterial capability: " + tn.toString();
+			}
+			
+			// production range
+			// TODO
+			
+			// production complexity
+			// TODO
+			
+			// production variety
+			if(!inf_variety.equals("")) {
+				Individual i = factory.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000956"));
+				i.setLabel(inf_variety, "en");
+				factory_indiv.addProperty(prop_hasVarietyCapability, i);
+				factory_comment += "\nProduction variety capability: " + inf_variety;
+			}
+			
+			// extracted capability
+			// TODO
 		}
+		
 		factory_indiv.setLabel(company.getName() + " factory", "en");
-		if(!(factory_comment.equals(company.getName() + " factory information:")))
-			factory_indiv.addComment(factory_comment, "en");
+		if(!factory_comment.equals(""))
+			factory_indiv.addComment(company.getName() + " factory information:" + factory_comment, "en");
 		company_indiv.addProperty(prop_operates, factory_indiv);
 		company_indiv.setLabel(company.getName(), "en");
 		company_indiv.addComment(company_comment, "en");
@@ -891,7 +1418,7 @@ public class Window extends JFrame {
 							{
 								OntModel imported_factory = ModelFactory.createOntologyModel(modelSpec);
 								OntDocumentManager factory_dm = imported_factory.getDocumentManager();
-								factory_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:ontologies/MSDL.owl");
+								factory_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
 								imported_factory.read(selected_file.getAbsolutePath(), "RDF/XML");
 								builderPage(true, imported_factory, true, false);
 							}
@@ -1110,7 +1637,7 @@ public class Window extends JFrame {
 		panel_2.add(year_founded, gbc_year_founded);
 		year_founded.setColumns(10);
 		
-		JLabel lblUrl = new JLabel("URL:");
+		JLabel lblUrl = new JLabel("* URL:");
 		lblUrl.setFont(new Font("Arial", Font.PLAIN, 12));
 		GridBagConstraints gbc_lblUrl = new GridBagConstraints();
 		gbc_lblUrl.anchor = GridBagConstraints.EAST;
@@ -1336,8 +1863,8 @@ public class Window extends JFrame {
         		try { ct = type.getSelectedItem().toString(); } catch(Exception e1) {}
         		try { bt = business_type.getSelectedItem().toString(); } catch(Exception e1) {}
             	
-        		if(name.getText().equals("") || ct.equals("") || bt.equals(""))
-        			JOptionPane.showMessageDialog(frame, "Please enter all required fields before continuing.", "Notice", JOptionPane.PLAIN_MESSAGE, null);
+        		if(name.getText().equals("") || ct.equals("") || bt.equals("") || URL.getText().equals(""))
+        			JOptionPane.showMessageDialog(frame, new JLabel("Please enter all required fields before continuing.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
             	else {
             		company = new Company(name.getText(), ct, bt, employees.getText(), year_founded.getText(), URL.getText(), address.getText(), city.getText(), state.getText(), zip.getText());
             		
@@ -1674,121 +2201,7 @@ public class Window extends JFrame {
 		panel_3.setLayout(gl_panel_3);
 		
 		if(imported && first_page && (!from_second_page)) {
-			try { company.setName(imported_factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000149")).getObject().asResource().getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-			try { company.setEmployess(((int)Double.parseDouble(imported_factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000874")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().asLiteral().getLexicalForm())) + ""); } catch(Exception e) {}
-			try { company.setYearFounded(""); } catch(Exception e) {} // TODO
-			try { company.setURL(imported_factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000876")).getObject().asResource().getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-				
-			String bt = getOntClassOf(imported_factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991")).toString();
-			if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000873"))
-				try { company.setBusinessType("Small business manufacturing company"); } catch(Exception e) {}
-			else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000872"))
-				try { company.setBusinessType("Veteran-owned manufacturing company"); } catch(Exception e) {}
-			else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000871"))
-				try { company.setBusinessType("Woman-owned manufacturing company"); } catch(Exception e) {}
-			else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000870"))
-				try { company.setBusinessType("Minority-owned manufacturing company"); } catch(Exception e) {}
-			else if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000017"))
-				try { company.setBusinessType("Other"); } catch(Exception e) {}
-				
-			String ct = imported_factory.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_99999991").getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000877")).getObject().toString();
-			if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000868"))
-				try { company.setType("Original design manufacturer"); } catch(Exception e) {}
-			else if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000867"))
-				try { company.setType("Original equipment manufacturer"); } catch(Exception e) {}
-			else if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000866"))
-				try { company.setType("Contract manufacturer"); } catch(Exception e) {}
-			else if(ct.equals("http://infoneer.txstate.edu/ontology/MSDL_0000865"))
-				try { company.setType("Other"); } catch(Exception e) {}
-				
-			RDFNode street_thing = null, city_thing = null, state_thing = null, zip_thing = null;
-			for(NodeIterator n = imported_factory.listObjectsOfProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000875")); n.hasNext(); ) {
-				try {
-					RDFNode address_thing = n.next();
-					for(ExtendedIterator<Statement> s = imported_factory.listStatements(); s.hasNext(); ) {
-						Statement statement_thing = s.next();
-						Resource subject = statement_thing.getSubject();
-						String predicate = statement_thing.getPredicate().toString();
-						String object = statement_thing.getObject().toString();
-						if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000840"))
-							street_thing = address_thing;
-						if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000838"))
-							city_thing = address_thing;
-						if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000841"))
-							state_thing = address_thing;
-						if(subject.equals(address_thing) && predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && object.equals("http://infoneer.txstate.edu/ontology/MSDL_0000839"))
-							zip_thing = address_thing;
-					}
-				} catch(Exception e) {}
-			}
-			for(ExtendedIterator<Statement> s = imported_factory.listStatements(); s.hasNext(); ) {
-				Statement statement_thing = s.next();
-				Resource subject = statement_thing.getSubject();
-				String predicate = statement_thing.getPredicate().toString();
-				if(subject.equals(street_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
-					try { company.setAddress(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-				else if(subject.equals(city_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
-					try { company.setCity(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-				else if(subject.equals(state_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
-					try { company.setState(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-				else if(subject.equals(zip_thing) && predicate.equals("http://www.w3.org/2000/01/rdf-schema#label"))
-					try { company.setZip(statement_thing.getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-			}
-
-			for(NodeIterator n = imported_factory.listObjects(); n.hasNext(); ) {
-				RDFNode obj = n.next();
-				Individual indiv = null;
-				OntClass category_class = null;
-				
-				try {
-					indiv = ontology.getIndividual(obj.toString());
-					if(isCategoryOf(getOntClassOf(indiv), class_3DPrinter))
-						category_class = class_3DPrinter;
-					else if(isCategoryOf(getOntClassOf(indiv), class_MachineTool))
-						category_class = class_MachineTool;
-
-					if(category_class != null) {
-						boolean exists = false;
-						for(int x = 0; x < equipment_individuals.size(); x++) {
-							if(equipment_individuals.get(x).getIndividual().getURI().equals(indiv.getURI())) {
-								exists = true;
-								x = equipment_individuals.size();
-							}
-						}
-						if(!exists)
-							equipment_individuals.add(new ListNode(indiv, category_class, ""));
-					}
-				} catch(Exception aaa) {}
-			}
-			for(NodeIterator n = imported_factory.listObjects(); n.hasNext(); ) {
-				RDFNode obj = n.next();
-				Individual indiv = null;
-				OntClass category_class = null;
-				
-				try {
-					indiv = ontology.getIndividual(obj.toString());
-					if(isCategoryOf(getOntClassOf(indiv), class_Industry))
-						category_class = class_Industry;
-					else if(isCategoryOf(getOntClassOf(indiv), class_Material))
-						category_class = class_Material;
-					else if(isCategoryOf(getOntClassOf(indiv), class_Software))
-						category_class = class_Software;
-					else if(isCategoryOf(getOntClassOf(indiv), class_Certification))
-						category_class = class_Certification;
-						
-					if(category_class != null) {
-						boolean exists = false;
-						for(int x = 0; x < capability_individuals.size(); x++) {
-							if(capability_individuals.get(x).getIndividual().getURI().equals(indiv.getURI())) {
-								exists = true;
-								x = capability_individuals.size();
-							}
-						}
-						if(!exists)
-							capability_individuals.add(new ListNode(indiv, category_class, ""));
-					}
-				} catch(Exception aaa) {}
-			}
+			setCompanyInfo(imported_factory);
 		}
 		
 		JLabel lblCompanyName_1;
@@ -1890,11 +2303,12 @@ public class Window extends JFrame {
 		        	return;
 		        OntClass selected_class = ontology.getOntClass(((TreeNode)selected_node.getUserObject()).getID());
 		        for(ExtendedIterator<? extends OntResource> i = selected_class.listInstances(true); i.hasNext(); ) {
-					Individual indiv = i.next().asIndividual();
 					try {
+						Individual indiv = i.next().asIndividual();
+						indiv.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
 						list_model_1.addElement(new ListNode(indiv, combo_class, ""));
 					} catch(Exception aaa) {
-						System.out.println(indiv + " " + aaa);
+						System.out.println("Error: No rdfs:label for an individual");
 					}
 				}
 				ListNode[] elements = new ListNode[list_model_1.getSize()];
@@ -2541,6 +2955,69 @@ public class Window extends JFrame {
 		});
 		panel_24.add(btnInfo);
 		
+		JPanel panel_pic = new JPanel();
+		GridBagConstraints gbc_panel_pic = new GridBagConstraints();
+		gbc_panel_pic.insets = new Insets(-190, 0, 5, 0);
+		gbc_panel_pic.ipadx = -30;
+		gbc_panel_pic.fill = GridBagConstraints.HORIZONTAL;
+		gbc_panel_pic.gridx = 0;
+		gbc_panel_pic.gridy = 4;
+		panel_2.add(panel_pic, gbc_panel_pic);
+		panel_pic.setLayout(new GridLayout(0, 1, 0, 0));
+		
+		JButton btnPic = new JButton("Pic");
+		btnPic.setFont(new Font("Arial", Font.PLAIN, 15));
+		btnPic.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	ListNode ln = list_1.getSelectedValue();
+				    	if(ln != null) {
+							/*try {
+								JDialog pic_dialog = new JDialog();
+								ImageIcon pic = new ImageIcon(new URL("https://mazakfiles.blob.core.windows.net/web-site/image/machine/large/96c238cf-1e88-43ab-8824-dc2d1cd630ce/INTEGREX-e-420H-ST_Large.gif")); // TODO image property
+								int pic_width = pic.getIconWidth(), pic_height = pic.getIconHeight();
+								if(pic_width > pic_height) {
+									float ratio = (float)pic_height / pic_width;
+									pic_width = screenWidth - 20;
+									pic_height = (int)(pic_width * ratio);
+								}
+								else {
+									float ratio = (float)pic_width / pic_height;
+									pic_height = screenHeight - 20;
+									pic_width = (int)(pic_height * ratio);
+								}
+								pic.setImage(getScaledImage(pic.getImage(), pic_width, pic_height));
+								JLabel pic_label = new JLabel();
+								pic_label.setIcon(pic);
+								pic_dialog.add(pic_label);
+								pic_dialog.setLocationRelativeTo(null);
+								pic_dialog.setBounds(frame.getX() + (frame.getWidth() / 2) - (pic_width / 2), frame.getY() + (frame.getHeight() / 2) - (pic_height / 2), pic_width, pic_height);
+								//pic_dialog.setAlwaysOnTop(true);
+								pic_dialog.setResizable(false);
+								pic_dialog.setVisible(true);
+								frame.addWindowListener(new WindowAdapter() {
+					                @Override
+					                public void windowActivated(WindowEvent e) {pic_dialog.setAlwaysOnTop(true);}
+					                @Override
+					                public void windowDeactivated(WindowEvent e) {
+					                	pic_dialog.toBack();
+					                    frame.toBack();
+					                }
+					            });
+							} catch (Exception e) {
+								JOptionPane.showMessageDialog(frame, new JLabel("No available picture.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+							}*/
+				    	}
+				    }
+				});
+				
+			}
+		});
+		panel_pic.add(btnPic);
+		
 		JPanel panel_17 = new JPanel();
 		GridBagConstraints gbc_panel_17 = new GridBagConstraints();
 		gbc_panel_17.insets = new Insets(0, 0, 0, 5);
@@ -2702,7 +3179,7 @@ public class Window extends JFrame {
 								if(result == 0)
 								{
 									try {
-										OntModel factory = generateFinalFactory();
+										OntModel factory = generateFinalFactory(true, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "");
 										File selected_file = fc.getSelectedFile();
 										String selected_file_path = selected_file.getAbsolutePath();
 										if(selected_file_path.length() < 4 || !(selected_file_path.substring(selected_file_path.length() - 4, selected_file_path.length()).equals(".owl")))
@@ -2796,7 +3273,7 @@ public class Window extends JFrame {
 						save_panel.add(list_panel, gbc_list_panel);
 						
 						JPanel enter_panel = new JPanel(new FlowLayout(FlowLayout.LEADING,0, 0));
-						JLabel enter_save = new JLabel("Enter save name:", SwingConstants.LEFT);
+						JLabel enter_save = new JLabel("Enter save name (if same name exists, it will be overwritten):", SwingConstants.LEFT);
 						enter_save.setFont(new Font("Arial", Font.PLAIN, 12));
 						GridBagConstraints gbc_enter_save = new GridBagConstraints();
 						gbc_enter_save.insets = new Insets(0, 0, 5, 0);
@@ -2818,7 +3295,13 @@ public class Window extends JFrame {
 				    	result = JOptionPane.showOptionDialog(frame, save_panel, "Save Factory", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Save", "Cancel"}, null);
 			            switch(result) {
 			                case JOptionPane.OK_OPTION:
-								OntModel factory = generateFinalFactory();
+								OntModel factory = generateFinalFactory(true, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "");
+								for(int x = 0; x < saved_factories.size(); x++) {
+									if(saved_factories.get(x).toString().equals(name_save.getText())) {
+										saved_factories.remove(x);
+										x = saved_factories.size();
+									}
+								}
 			                	saved_factories.add(new ListNode2(factory, name_save.getText()));
 			                    return;
 			                case JOptionPane.CANCEL_OPTION:
@@ -2979,6 +3462,624 @@ public class Window extends JFrame {
 	public void resultsPage(OntModel factory) {
 		getContentPane().removeAll();
 		
+		setCompanyInfo(factory);
+		
+		parsing_table = new JTable();
+		parsing_table.setBorder(new EmptyBorder(0, 0, 0, 0));
+		parsing_table.setFillsViewportHeight(true);
+		parsing_table.setRowHeight(20);
+		DefaultTableModel parsing_model = new DefaultTableModel(new Object[][] {}, new String[] { "Parsing... please wait" });
+		parsing_table.setModel(parsing_model);
+		parsing_table.setDragEnabled(false);
+		parsing_table.setEnabled(false);
+		parsing_table.setOpaque(true);
+		parsing_table.getTableHeader().setReorderingAllowed(false);
+		parsing_table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		
+		crawl_go = true;
+		SwingWorker<?,?> worker = new SwingWorker<Void,Void>() {
+			@Override
+			protected Void doInBackground() {
+				String url = company.getURL();
+				Map<JsonNodeWrapper, Integer> matched_concepts = crawl(url, 2);
+				if(matched_concepts.size() == 0) {
+					parsing_table.getTableHeader().getColumnModel().getColumn(0).setHeaderValue("No matched concepts!");
+					parsing_table.repaint();
+				}
+				else {
+					Map<String, ArrayList<String>> unordered_columns = new LinkedHashMap<>();
+					int max_rows = 1;
+					for(JsonNodeWrapper concept : matched_concepts.keySet()) {
+						String top_concept = getTopConceptName(rn, concept.getJsonNode());
+						if(unordered_columns.get(top_concept) != null) {
+							unordered_columns.get(top_concept).add(concept.toString().trim() + " (" + matched_concepts.get(concept) + ")");
+							if(unordered_columns.get(top_concept).size() > max_rows)
+								max_rows = unordered_columns.get(top_concept).size();
+						}
+						else {
+							ArrayList<String> concept_list = new ArrayList<String>();
+							concept_list.add(concept.toString().trim() + " (" + matched_concepts.get(concept) + ")");
+							unordered_columns.put(top_concept, concept_list);
+						}
+					}
+					Map<String, ArrayList<String>> columns = new LinkedHashMap<>();
+					unordered_columns.entrySet().stream().sorted(Collections.reverseOrder(Comparator.comparingInt(e -> e.getValue().size()))).forEach(entry -> columns.put(entry.getKey(), entry.getValue()));
+					
+					TableColumnModel cm = parsing_table.getColumnModel();
+					int rows = max_rows, cols = columns.size();
+					parsing_model.setRowCount(rows);
+					parsing_model.setColumnCount(cols);
+					int c = 0;
+					for(Map.Entry<String, ArrayList<String>> e : columns.entrySet()) {
+						//cm.getColumn(c).setHeaderValue("<html>" + e.getKey().substring(0, e.getKey().lastIndexOf(" ")) + "<br/>" + e.getKey().substring(e.getKey().lastIndexOf(" ")) + "</html>");
+						int ix = e.getKey().indexOf(" ");
+						if(ix != -1)
+							cm.getColumn(c).setHeaderValue(e.getKey().substring(0, ix) + e.getKey().substring(ix));
+						else
+							cm.getColumn(c).setHeaderValue(e.getKey());
+						for(int r = 0; r < e.getValue().size(); r++)
+							parsing_model.setValueAt(e.getValue().get(r), r, c);
+						c++;
+					}
+					
+					int total_width = 0;
+					for(c = 0; c < cols; c++) {
+						int min_width = 100, max_width = 700;
+						cm.getColumn(c).setMinWidth(min_width);
+						cm.getColumn(c).setMaxWidth(max_width);
+						int preferred_width = min_width;
+						for(int r = 0; r < rows; r++) {
+					        int width = ((Component)parsing_table.prepareRenderer(parsing_table.getCellRenderer(r, c), r, c)).getPreferredSize().width + parsing_table.getIntercellSpacing().width;
+					        if(width > preferred_width)
+					        	preferred_width = width;
+					        if (preferred_width >= max_width) {
+					            preferred_width = max_width;
+					            break;
+					        }
+						}
+						int header_width = (parsing_table.getTableHeader().getDefaultRenderer().getTableCellRendererComponent(parsing_table, cm.getColumn(c).getHeaderValue(), false, false, -1, c)).getPreferredSize().width + parsing_table.getIntercellSpacing().width;
+						if(header_width > preferred_width)
+				        	preferred_width = header_width;
+						cm.getColumn(c).setPreferredWidth(preferred_width + 8);
+						total_width += preferred_width;
+					}
+					if(total_width >= 590)
+						parsing_table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+				}
+				return null;
+			}
+			
+			@Override
+			protected void done() {
+				crawl_go = false;
+	        }
+		};
+	    worker.execute();
+		
+		OntClass class_ProductionMachine = ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000033");
+		OntClass class_FeedDrive = ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000119");
+		Property prop_hasMeasurement = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000924");
+		Property prop_hasValue = ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004");
+		Property prop_hasMinTolerance = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000928");
+		Property prop_hasMaxTolerance = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000970");
+		Property prop_hasMinLength = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000935");
+		Property prop_hasMaxLength = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000936");
+		Property prop_hasMinDiameter = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000933");
+		Property prop_hasMaxDiameter = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000934");
+		Property prop_hasMinRoughness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000932");
+		Property prop_hasMaxRoughness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000931");
+		Property prop_hasMinThickness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000930");
+		Property prop_hasMaxThickness = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000929");
+		Property prop_hasMaxWeight = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000954");
+		Property prop_hasFunction = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000984");
+		Property prop_hasMaterialCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000770");;
+		Property prop_hasPart = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000130");
+		exp_functions = new ArrayList<TableNode>();
+		inf_functions = new ArrayList<TableNode>();
+		exp_materials = new ArrayList<TableNode>();
+		inf_materials = new ArrayList<TableNode>();
+		int total_machines = equipment_individuals.size();
+		int max_feed_drives = 0;
+		
+		float exp_min_tolerance = -1, exp_max_tolerance = -1, exp_min_length = -1, exp_max_length = -1, exp_min_diameter = -1, exp_max_diameter = -1, exp_min_roughness = -1, exp_max_roughness = -1, exp_min_thickness = -1, exp_max_thickness = -1, exp_max_weight = -1;
+		float inf_min_tolerance = -1, inf_max_tolerance = -1, inf_min_length = -1, inf_max_length = -1, inf_min_diameter = -1, inf_max_diameter = -1, inf_min_roughness = -1, inf_max_roughness = -1, inf_min_thickness = -1, inf_max_thickness = -1, inf_max_weight = -1;
+		for(int x = 0; x < equipment_individuals.size(); x++) {
+			Individual indiv = equipment_individuals.get(x).getIndividual();
+			
+			int feed_drives = 0;
+			for(StmtIterator si = indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+				if(isCategoryOf(getOntClassOf(ontology.getIndividual(si.next().getObject().asResource().getURI())), class_FeedDrive))
+					feed_drives++;
+			}
+			if(feed_drives > max_feed_drives)
+				max_feed_drives = feed_drives;
+			
+			for(StmtIterator si = indiv.listProperties(prop_hasFunction); si.hasNext(); ) {
+				Individual i = ontology.getIndividual(si.next().getObject().asResource().getURI());
+				boolean exists = false;
+				for(int y = 0; y < exp_functions.size(); y++) {
+					if(exp_functions.get(y).getIndividual().getURI().equals(i.getURI())) {
+						exists = true;
+						y = exp_functions.size();
+					}
+				}
+				if(!exists) {
+					TableNode add_node = new TableNode(i, "");
+					exp_functions.add(add_node);
+				}
+			}
+			
+			for(StmtIterator si = indiv.listProperties(prop_hasMaterialCapability); si.hasNext(); ) {
+				Individual i = ontology.getIndividual(si.next().getObject().asResource().getURI());
+				OntClass material_class = getOntClassOf(i);
+				boolean exists = false;
+				for(int y = 0; y < exp_materials.size(); y++) {
+					if(exp_materials.get(y).getIndividual().getURI().equals(material_class.getURI())) {
+						exists = true;
+						y = exp_materials.size();
+					}
+				}
+				if(!exists) {
+					TableNode add_node = new TableNode(i, "");
+					exp_materials.add(add_node);
+				}
+			}
+					
+			try { // min tolerance
+				Individual MD_minTolerance = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMinTolerance).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_minTolerance.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val < exp_min_tolerance || exp_min_tolerance == -1)
+					exp_min_tolerance = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_minTolerance = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMinTolerance).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_minTolerance.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val < inf_min_tolerance || inf_min_tolerance == -1)
+								inf_min_tolerance = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // max tolerance
+				Individual MD_maxTolerance = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMaxTolerance).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_maxTolerance.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val > exp_max_tolerance)
+					exp_max_tolerance = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_maxTolerance = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMaxTolerance).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_maxTolerance.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val > inf_max_tolerance)
+								inf_max_tolerance = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // min length
+				Individual MD_minLength = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMinLength).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_minLength.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val < exp_min_length || exp_min_length == -1)
+					exp_min_length = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_minLength = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMinLength).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_minLength.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val < inf_min_length || inf_min_length == -1)
+								inf_min_length = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // max length
+				Individual MD_maxLength = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMaxLength).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_maxLength.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val > exp_max_length)
+					exp_max_length = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_maxLength = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMaxLength).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_maxLength.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val > inf_max_length)
+								inf_max_length = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // min diameter
+				Individual MD_minDiameter = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMinDiameter).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_minDiameter.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val < exp_min_diameter || exp_min_diameter == -1)
+					exp_min_diameter = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_minDiameter = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMinDiameter).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_minDiameter.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val < inf_min_diameter || inf_min_diameter == -1)
+								inf_min_diameter = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // max diameter
+				Individual MD_maxDiameter = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMaxDiameter).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_maxDiameter.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val > exp_max_diameter)
+					exp_max_diameter = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_maxDiameter = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMaxDiameter).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_maxDiameter.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val > inf_max_diameter)
+								inf_max_diameter = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // min roughness
+				Individual MD_minRoughness = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMinRoughness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_minRoughness.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val < exp_min_roughness || exp_min_roughness == -1)
+					exp_min_roughness = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_minRoughness = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMinRoughness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_minRoughness.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val < inf_min_roughness || inf_min_roughness == -1)
+								inf_min_roughness = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // max roughness
+				Individual MD_maxRoughness = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMaxRoughness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_maxRoughness.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val > exp_max_roughness)
+					exp_max_roughness = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_maxRoughness = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMaxRoughness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_maxRoughness.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val > inf_max_roughness)
+								inf_max_roughness = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // min thickness
+				Individual MD_minThickness = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMinThickness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_minThickness.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val < exp_min_thickness || exp_min_thickness == -1)
+					exp_min_thickness = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_minThickness = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMinThickness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_minThickness.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val < inf_min_thickness || inf_min_thickness == -1)
+								inf_min_thickness = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // max thickness
+				Individual MD_maxThickness = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMaxThickness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_maxThickness.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val > exp_max_thickness)
+					exp_max_thickness = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_maxThickness = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMaxThickness).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_maxThickness.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val > inf_max_thickness)
+								inf_max_thickness = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+			
+			try { // max weight
+				Individual MD_maxWeight = ontology.getIndividual(ontology.getIndividual(indiv.getPropertyValue(prop_hasMaxWeight).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+				String val = MD_maxWeight.getPropertyValue(prop_hasValue).toString();
+				if(val.indexOf("^") != -1)
+					val = val.substring(0, val.indexOf("^"));
+				float f_val = Float.parseFloat(val);
+				if(f_val > exp_max_weight)
+					exp_max_weight = f_val;
+			} catch(Exception property_not_given) {
+				OntClass c = getOntClassOf(indiv);
+				boolean go_higher = true;
+				while(c.hasSuperClass() && go_higher) {
+					c = accountRestrictions(c.getSuperClass());
+					if(!isCategoryOf(c, class_ProductionMachine)) {
+						go_higher = false;
+						break;
+					}
+					for(ExtendedIterator<? extends OntResource> i = c.listInstances(true); i.hasNext(); ) {
+						Individual inf_indiv = i.next().asIndividual();
+						try {
+							Individual inf_MD_maxWeight = ontology.getIndividual(ontology.getIndividual(inf_indiv.getPropertyValue(prop_hasMaxWeight).asResource().getURI()).getPropertyValue(prop_hasMeasurement).asResource().getURI());
+							String inf_val = inf_MD_maxWeight.getPropertyValue(prop_hasValue).toString();
+							if(inf_val.indexOf("^") != -1)
+								inf_val = inf_val.substring(0, inf_val.indexOf("^"));
+							float inf_f_val = Float.parseFloat(inf_val);
+							if(inf_f_val > inf_max_weight)
+								inf_max_weight = inf_f_val;
+						} catch(Exception property_not_given2) {}
+					}
+				}
+			}
+
+		}
+		
+		for(TableNode t : exp_functions) {
+        	Individual i = t.getIndividual();
+        	for(ExtendedIterator<Individual> n = ontology.listIndividuals(); n.hasNext(); ) {
+    			try {
+    				Individual i2 = n.next();
+    				if(isCategoryOf(getOntClassOf(i2), getOntClassOf(i))) {
+    					boolean exists = false;
+    					for(int x = 0; x < exp_functions.size(); x++) {
+    						if(exp_functions.get(x).getIndividual().getURI().equals(i2.getURI())) {
+    							exists = true;
+    							x = exp_functions.size();
+    						}
+    					}
+    					if(!exists) {
+    						for(int x = 0; x < inf_functions.size(); x++) {
+        						if(inf_functions.get(x).getIndividual().getURI().equals(i2.getURI())) {
+        							exists = true;
+        							x = inf_functions.size();
+        						}
+        					}
+    					}
+    					if(!exists) {
+    						TableNode add_node = new TableNode(i2, "");
+    						inf_functions.add(add_node);
+    					}
+    				}
+    			} catch(Exception aaa) {}
+    		}
+        }
+		
+		for(TableNode t : exp_materials) {
+        	Individual i = t.getIndividual();
+        	for(ExtendedIterator<Individual> n = ontology.listIndividuals(); n.hasNext(); ) {
+    			try {
+    				Individual i2 = n.next();
+    				if(isCategoryOf(getOntClassOf(i2), getOntClassOf(i))) {
+    					boolean exists = false;
+    					for(int x = 0; x < exp_materials.size(); x++) {
+    						if(exp_materials.get(x).getIndividual().getURI().equals(i2.getURI())) {
+    							exists = true;
+    							x = exp_materials.size();
+    						}
+    					}
+    					if(!exists) {
+    						for(int x = 0; x < inf_materials.size(); x++) {
+        						if(inf_materials.get(x).getIndividual().getURI().equals(i2.getURI())) {
+        							exists = true;
+        							x = inf_materials.size();
+        						}
+        					}
+    					}
+    					if(!exists) {
+    						TableNode add_node = new TableNode(i2, "");
+    						inf_materials.add(add_node);
+    					}
+    				}
+    			} catch(Exception aaa) {}
+    		}
+        }
+		
+		String exp_range = "Low";
+		if(total_machines >= 3)
+			exp_range = "Medium";
+		if(total_machines >= 10)
+			exp_range = "High";
+		String inf_range = exp_range;
+		
+		String exp_variety = "Low";
+		if(exp_functions.size() >= 3)
+			exp_variety = "Medium";
+		if(exp_functions.size() >= 10)
+			exp_variety = "High";
+		String inf_variety = "Low";
+		if(exp_functions.size() + inf_functions.size() >= 3)
+			inf_variety = "Medium";
+		if(exp_functions.size() + inf_functions.size() >= 10)
+			inf_variety = "High";
+		
+		String exp_complexity = "Low - Medium";
+		if(max_feed_drives > 3)
+			exp_complexity = "High";
+		String inf_complexity = exp_complexity;
+		
+		final String fin_exp_complexity = exp_complexity, fin_inf_complexity = inf_complexity;
+		final String fin_exp_variety = exp_variety, fin_inf_variety = inf_variety;
+		final String fin_exp_range = exp_range, fin_inf_range = inf_range;
+		
+		final String fin_exp_min_tolerance = ("" + exp_min_tolerance).replaceFirst("-1.0", ""), fin_exp_max_tolerance = ("" + exp_max_tolerance).replaceFirst("-1.0", "");
+		final String fin_exp_min_length = ("" + exp_min_length).replaceFirst("-1.0", ""), fin_exp_max_length = ("" + exp_max_length).replaceFirst("-1.0", "");
+		final String fin_exp_min_diameter = ("" + exp_min_diameter).replaceFirst("-1.0", ""), fin_exp_max_diameter = ("" + exp_max_diameter).replaceFirst("-1.0", "");
+		final String fin_exp_min_roughness = ("" + exp_min_roughness).replaceFirst("-1.0", ""), fin_exp_max_roughness = ("" + exp_max_roughness).replaceFirst("-1.0", "");
+		final String fin_exp_min_thickness = ("" + exp_min_thickness).replaceFirst("-1.0", ""), fin_exp_max_thickness = ("" + exp_max_thickness).replaceFirst("-1.0", "");
+		final String fin_exp_max_weight = ("" + exp_max_weight).replaceFirst("-1.0", " - ");
+		
+		final String fin_inf_min_tolerance = ("" + inf_min_tolerance).replaceFirst("-1.0", fin_exp_min_tolerance), fin_inf_max_tolerance = ("" + inf_max_tolerance).replaceFirst("-1.0", fin_exp_max_tolerance);
+		final String fin_inf_min_length = ("" + inf_min_length).replaceFirst("-1.0", fin_exp_min_length), fin_inf_max_length = ("" + inf_max_length).replaceFirst("-1.0", fin_exp_max_length);
+		final String fin_inf_min_diameter = ("" + inf_min_diameter).replaceFirst("-1.0", fin_exp_min_diameter), fin_inf_max_diameter = ("" + inf_max_diameter).replaceFirst("-1.0", fin_exp_max_diameter);
+		final String fin_inf_min_roughness = ("" + inf_min_roughness).replaceFirst("-1.0", fin_exp_min_roughness), fin_inf_max_roughness = ("" + inf_max_roughness).replaceFirst("-1.0", fin_exp_max_roughness);
+		final String fin_inf_min_thickness = ("" + inf_min_thickness).replaceFirst("-1.0", fin_exp_min_thickness), fin_inf_max_thickness = ("" + inf_max_thickness).replaceFirst("-1.0", fin_exp_max_thickness);
+		final String fin_inf_max_weight = ("" + inf_max_weight).replaceFirst("-1.0", fin_exp_max_weight);
+		
 		JPanel panel = new JPanel();
 		getContentPane().add(panel, BorderLayout.CENTER);
 		GridBagLayout gbl_panel = new GridBagLayout();
@@ -2988,7 +4089,12 @@ public class Window extends JFrame {
 		gbl_panel.rowWeights = new double[]{0.0, 1.0, 0.0, Double.MIN_VALUE};
 		panel.setLayout(gbl_panel);
 		
-		JLabel lblFactoryAnalysisResults = new JLabel("Factory Analysis");
+		JLabel lblFactoryAnalysisResults;
+		try {
+			lblFactoryAnalysisResults = new JLabel("Factory Analysis - " + company.getName());
+		} catch(Exception ee) {
+			lblFactoryAnalysisResults = new JLabel("Factory Analysis - [ Untitled ]");
+		}
 		lblFactoryAnalysisResults.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_lblFactoryAnalysisResults = new GridBagConstraints();
 		gbc_lblFactoryAnalysisResults.insets = new Insets(14, 0, 5, 0);
@@ -3009,37 +4115,14 @@ public class Window extends JFrame {
 		
 		JPanel panel_1 = new JPanel();
 		panel_1.setBorder(new MatteBorder(0, 0, 1, 0, tab_color2));
-		tabbedPane.addTab("Capability Range", null, panel_1, null);
+		tabbedPane.addTab("<html>Part Quality<br/>Capability</html>", null, panel_1, null);
 		panel_1.setBackground(tab_color1);
 		GridBagLayout gbl_panel_1 = new GridBagLayout();
 		gbl_panel_1.columnWidths = new int[]{0, 0};
-		gbl_panel_1.rowHeights = new int[]{0, 0, 0, 0, 0, 0};
+		gbl_panel_1.rowHeights = new int[]{200, 0, 200, 0};
 		gbl_panel_1.columnWeights = new double[]{1.0, Double.MIN_VALUE};
-		gbl_panel_1.rowWeights = new double[]{0.0, 1.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
+		gbl_panel_1.rowWeights = new double[]{1.0, 0.0, 1.0, Double.MIN_VALUE};
 		panel_1.setLayout(gbl_panel_1);
-		
-		JPanel panel_20 = new JPanel();
-		panel_20.setBackground(tab_color1);
-		GridBagConstraints gbc_panel_20 = new GridBagConstraints();
-		gbc_panel_20.insets = new Insets(0, 0, 5, 0);
-		gbc_panel_20.fill = GridBagConstraints.BOTH;
-		gbc_panel_20.gridx = 0;
-		gbc_panel_20.gridy = 0;
-		panel_1.add(panel_20, gbc_panel_20);
-		GridBagLayout gbl_panel_20 = new GridBagLayout();
-		gbl_panel_20.columnWidths = new int[]{0, 0};
-		gbl_panel_20.rowHeights = new int[]{0, 0};
-		gbl_panel_20.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_panel_20.rowWeights = new double[]{0.0, Double.MIN_VALUE};
-		panel_20.setLayout(gbl_panel_20);
-		
-		JLabel lblQuantitativeIndicators = new JLabel("Quantitative Indicators:");
-		GridBagConstraints gbc_lblQuantitativeIndicators = new GridBagConstraints();
-		gbc_lblQuantitativeIndicators.insets = new Insets(15, 50, 0, 0);
-		gbc_lblQuantitativeIndicators.fill = GridBagConstraints.BOTH;
-		gbc_lblQuantitativeIndicators.gridx = 0;
-		gbc_lblQuantitativeIndicators.gridy = 0;
-		panel_20.add(lblQuantitativeIndicators, gbc_lblQuantitativeIndicators);
 		
 		JPanel panel_18 = new JPanel();
 		panel_18.setBackground(tab_color1);
@@ -3047,7 +4130,7 @@ public class Window extends JFrame {
 		gbc_panel_18.insets = new Insets(0, 0, 5, 0);
 		gbc_panel_18.fill = GridBagConstraints.BOTH;
 		gbc_panel_18.gridx = 0;
-		gbc_panel_18.gridy = 1;
+		gbc_panel_18.gridy = 0;
 		panel_1.add(panel_18, gbc_panel_18);
 		GridBagLayout gbl_panel_18 = new GridBagLayout();
 		gbl_panel_18.columnWidths = new int[]{0, 0};
@@ -3064,7 +4147,7 @@ public class Window extends JFrame {
 		scrollPane_4.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
 		scrollPane_4.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
 		GridBagConstraints gbc_scrollPane_4 = new GridBagConstraints();
-		gbc_scrollPane_4.insets = new Insets(0, 50, 0, 50);
+		gbc_scrollPane_4.insets = new Insets(20, 50, 0, 50);
 		gbc_scrollPane_4.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane_4.gridx = 0;
 		gbc_scrollPane_4.gridy = 0;
@@ -3077,11 +4160,12 @@ public class Window extends JFrame {
 		table_6.getTableHeader().setPreferredSize(new Dimension(0, 30));
 		table_6.setModel(new DefaultTableModel(
 			new Object[][] {
-				{"Precision (inch)", ".00001 - .001", ""},
-				{"Part length (inch)", "5 - 45", ""},
-				{"Part diameter (inch)", "4 - 18", ""},
-				{"Surface roughness", "1.6 - 50", ""},
-				{"Smallest wall thickness", ".2", ""},
+				{"Tolerance (inch)", fin_exp_min_tolerance + " - " + fin_exp_max_tolerance, ""},
+				{"Length (inch)", fin_exp_min_length + " - " + fin_exp_max_length, ""},
+				{"Diameter (inch)", fin_exp_min_diameter + " - " + fin_exp_max_diameter, ""},
+				{"Surface roughness (microinch)", fin_exp_min_roughness + " - " + fin_exp_max_roughness, ""},
+				{"Wall thickness (inch)", fin_exp_min_thickness + " - " + fin_exp_max_thickness, ""},
+				{"Maximum weight (lb)", fin_exp_max_weight, ""},
 			},
 			new String[] {
 				"Capability", "Explicit", "Inferred"
@@ -3100,10 +4184,10 @@ public class Window extends JFrame {
 		JPanel panel_17 = new JPanel();
 		panel_17.setBackground(tab_color1);
 		GridBagConstraints gbc_panel_17 = new GridBagConstraints();
-		gbc_panel_17.insets = new Insets(10, 0, 10, 0);
+		gbc_panel_17.insets = new Insets(0, 0, 5, 0);
 		gbc_panel_17.fill = GridBagConstraints.BOTH;
 		gbc_panel_17.gridx = 0;
-		gbc_panel_17.gridy = 2;
+		gbc_panel_17.gridy = 1;
 		panel_1.add(panel_17, gbc_panel_17);
 		GridBagLayout gbl_panel_17 = new GridBagLayout();
 		gbl_panel_17.columnWidths = new int[]{0, 0, 0};
@@ -3132,35 +4216,12 @@ public class Window extends JFrame {
 		gbc_btnReset_3.gridy = 0;
 		panel_17.add(btnReset_3, gbc_btnReset_3);
 		
-		JPanel panel_19 = new JPanel();
-		panel_19.setBackground(tab_color1);
-		GridBagConstraints gbc_panel_19 = new GridBagConstraints();
-		gbc_panel_19.insets = new Insets(0, 0, 5, 0);
-		gbc_panel_19.fill = GridBagConstraints.BOTH;
-		gbc_panel_19.gridx = 0;
-		gbc_panel_19.gridy = 3;
-		panel_1.add(panel_19, gbc_panel_19);
-		GridBagLayout gbl_panel_19 = new GridBagLayout();
-		gbl_panel_19.columnWidths = new int[]{0, 0};
-		gbl_panel_19.rowHeights = new int[]{0, 0};
-		gbl_panel_19.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_panel_19.rowWeights = new double[]{0.0, Double.MIN_VALUE};
-		panel_19.setLayout(gbl_panel_19);
-		
-		JLabel lblQualitativeIndicators = new JLabel("Qualitative Indicators:");
-		GridBagConstraints gbc_lblQualitativeIndicators = new GridBagConstraints();
-		gbc_lblQualitativeIndicators.insets = new Insets(0, 50, 0, 0);
-		gbc_lblQualitativeIndicators.fill = GridBagConstraints.BOTH;
-		gbc_lblQualitativeIndicators.gridx = 0;
-		gbc_lblQualitativeIndicators.gridy = 0;
-		panel_19.add(lblQualitativeIndicators, gbc_lblQualitativeIndicators);
-		
 		JPanel panel_16 = new JPanel();
 		panel_16.setBackground(tab_color1);
 		GridBagConstraints gbc_panel_16 = new GridBagConstraints();
 		gbc_panel_16.fill = GridBagConstraints.BOTH;
 		gbc_panel_16.gridx = 0;
-		gbc_panel_16.gridy = 4;
+		gbc_panel_16.gridy = 2;
 		panel_1.add(panel_16, gbc_panel_16);
 		GridBagLayout gbl_panel_16 = new GridBagLayout();
 		gbl_panel_16.columnWidths = new int[]{0, 0};
@@ -3169,64 +4230,16 @@ public class Window extends JFrame {
 		gbl_panel_16.rowWeights = new double[]{1.0, Double.MIN_VALUE};
 		panel_16.setLayout(gbl_panel_16);
 		
-		JScrollPane scrollPane_5 = new JScrollPane();
-		scrollPane_5.setBackground(Color.WHITE);
-		scrollPane_5.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-		scrollPane_5.getVerticalScrollBar().setUnitIncrement(10);
-		scrollPane_5.getHorizontalScrollBar().setUnitIncrement(10);
-		scrollPane_5.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
-		scrollPane_5.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
-		GridBagConstraints gbc_scrollPane_5 = new GridBagConstraints();
-		gbc_scrollPane_5.insets = new Insets(0, 50, 20, 50);
-		gbc_scrollPane_5.fill = GridBagConstraints.BOTH;
-		gbc_scrollPane_5.gridx = 0;
-		gbc_scrollPane_5.gridy = 0;
-		panel_16.add(scrollPane_5, gbc_scrollPane_5);
-		
-		JTable table_7 = new JTable();
-		table_7.setBorder(new EmptyBorder(0, 0, 0, 0));
-		table_7.setFillsViewportHeight(true);
-		table_7.setRowHeight(20);
-		table_7.getTableHeader().setPreferredSize(new Dimension(0, 30));
-		table_7.setModel(new DefaultTableModel(
-			new Object[][] {
-				{"Complexity", "Medium", ""},
-				{"Variety", "Low", ""},
-				{"Production range", "Low - medium", ""},
-			},
-			new String[] {
-				"Capability", "Explicit", "Inferred"
-			}
-		));
-		table_7.getColumnModel().getColumn(0).setPreferredWidth(300);
-		table_7.getColumnModel().getColumn(1).setPreferredWidth(150);
-		table_7.getColumnModel().getColumn(2).setPreferredWidth(150);
-		table_7.setAutoCreateColumnsFromModel(false);
-		table_7.setDragEnabled(false);
-		table_7.setEnabled(false);
-		table_7.setOpaque(true);
-		table_7.getTableHeader().setReorderingAllowed(false);
-		scrollPane_5.setViewportView(table_7);
-		
 		btnInferCapability_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				table_7.setModel(new DefaultTableModel(
-					new Object[][] {
-						{"Complexity", "Medium", "Medium"},
-						{"Variety", "Low", "Low - medium"},
-						{"Production range", "Low - medium", "Low - medium"},
-					},
-					new String[] {
-						"Capability", "Explicit", "Inferred"
-					}
-				));
 				table_6.setModel(new DefaultTableModel(
 					new Object[][] {
-						{"Precision (inch)", ".00001 - .001", ".00001 - .001"},
-						{"Part length (inch)", "5 - 45", "3 - 48"},
-						{"Part diameter (inch)", "4 - 18", "3.5 - 20"},
-						{"Surface roughness", "1.6 - 50", "8 - 50"},
-						{"Smallest wall thickness", ".2", ".1"},
+						{"Tolerance (inch)", fin_exp_min_tolerance + " - " + fin_exp_max_tolerance, fin_inf_min_tolerance + " - " + fin_inf_max_tolerance},
+						{"Length (inch)", fin_exp_min_length + " - " + fin_exp_max_length, fin_inf_min_length + " - " + fin_inf_max_length},
+						{"Diameter (inch)", fin_exp_min_diameter + " - " + fin_exp_max_diameter, fin_inf_min_diameter + " - " + fin_inf_max_diameter},
+						{"Surface roughness (microinch)", fin_exp_min_roughness + " - " + fin_exp_max_roughness, fin_inf_min_roughness + " - " + fin_inf_max_roughness},
+						{"Wall thickness (inch)", fin_exp_min_thickness + " - " + fin_exp_max_thickness, fin_inf_min_thickness + " - " + fin_inf_max_thickness},
+						{"Maximum weight (lb)", fin_exp_max_weight, fin_inf_max_weight},
 					},
 					new String[] {
 						"Capability", "Explicit", "Inferred"
@@ -3237,23 +4250,14 @@ public class Window extends JFrame {
 		
 		btnReset_3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				table_7.setModel(new DefaultTableModel(
-					new Object[][] {
-						{"Complexity", "Medium", ""},
-						{"Variety", "Low", ""},
-						{"Production range", "Low - medium", ""},
-					},
-					new String[] {
-						"Capability", "Explicit", "Inferred"
-					}
-				));
 				table_6.setModel(new DefaultTableModel(
 					new Object[][] {
-						{"Precision (inch)", ".00001 - .001", ""},
-						{"Part length (inch)", "5 - 45", ""},
-						{"Part diameter (inch)", "4 - 18", ""},
-						{"Surface roughness", "1.6 - 50", ""},
-						{"Smallest wall thickness", ".2", ""},
+						{"Tolerance (inch)", fin_exp_min_tolerance + " - " + fin_exp_max_tolerance, ""},
+						{"Length (inch)", fin_exp_min_length + " - " + fin_exp_max_length, ""},
+						{"Diameter (inch)", fin_exp_min_diameter + " - " + fin_exp_max_diameter, ""},
+						{"Surface roughness (microinch)", fin_exp_min_roughness + " - " + fin_exp_max_roughness, ""},
+						{"Wall thickness (inch)", fin_exp_min_thickness + " - " + fin_exp_max_thickness, ""},
+						{"Maximum weight (lb)", fin_exp_max_weight, ""},
 					},
 					new String[] {
 						"Capability", "Explicit", "Inferred"
@@ -3265,10 +4269,10 @@ public class Window extends JFrame {
 		JPanel panel_2 = new JPanel();
 		panel_2.setBorder(new MatteBorder(0, 0, 1, 0, tab_color2));
 		panel_2.setBackground(tab_color1);
-		tabbedPane.addTab("Process Capability", null, panel_2, null);
+		tabbedPane.addTab("<html>Process<br/>Capability</html>", null, panel_2, null);
 		GridBagLayout gbl_panel_2 = new GridBagLayout();
 		gbl_panel_2.columnWidths = new int[]{0, 0};
-		gbl_panel_2.rowHeights = new int[]{0, 0, 0, 0};
+		gbl_panel_2.rowHeights = new int[]{200, 0, 200, 0};
 		gbl_panel_2.columnWeights = new double[]{1.0, Double.MIN_VALUE};
 		gbl_panel_2.rowWeights = new double[]{1.0, 0.0, 1.0, Double.MIN_VALUE};
 		panel_2.setLayout(gbl_panel_2);
@@ -3309,13 +4313,14 @@ public class Window extends JFrame {
 		table_1.getTableHeader().setPreferredSize(new Dimension(0, 30));
 		table_1.setModel(new DefaultTableModel(
 			new Object[][] {
-				{"Milling"},
-				{"Turning"}
+
 			},
 			new String[] {
 				"Explicit Processes"
 			}
 		));
+		for(int x = 0; x < exp_functions.size(); x++)
+			((DefaultTableModel)table_1.getModel()).addRow(new Object[] { exp_functions.get(x) });
 		table_1.setDragEnabled(false);
 		table_1.setEnabled(false);
 		table_1.setOpaque(true);
@@ -3423,25 +4428,24 @@ public class Window extends JFrame {
             public void actionPerformed(ActionEvent e) {
             	table_2.setModel(new DefaultTableModel(
             		new Object[][] {
-            			{"Treading"},
-            			{"Knurling"},
-            			{"Boring"},
-            			{"Grooving"}
+
             		},
             		new String[] {
             			"Inferred Processes"
             		}
             	));
+            	for(int x = 0; x < inf_functions.size(); x++)
+            		((DefaultTableModel)table_2.getModel()).addRow(new Object[] { inf_functions.get(x) });
             }
         });
 		
 		JPanel panel_3 = new JPanel();
 		panel_3.setBorder(new MatteBorder(0, 0, 1, 0, tab_color2));
-		tabbedPane.addTab("Material Capability", null, panel_3, null);
+		tabbedPane.addTab("<html>Material<br/>Capability</html>", null, panel_3, null);
 		panel_3.setBackground(tab_color1);
 		GridBagLayout gbl_panel_3 = new GridBagLayout();
 		gbl_panel_3.columnWidths = new int[]{0, 0};
-		gbl_panel_3.rowHeights = new int[]{0, 0, 0, 0};
+		gbl_panel_3.rowHeights = new int[]{200, 0, 200, 0};
 		gbl_panel_3.columnWeights = new double[]{1.0, Double.MIN_VALUE};
 		gbl_panel_3.rowWeights = new double[]{1.0, 0.0, 1.0, Double.MIN_VALUE};
 		panel_3.setLayout(gbl_panel_3);
@@ -3482,15 +4486,14 @@ public class Window extends JFrame {
 		table.getTableHeader().setPreferredSize(new Dimension(0, 30));
 		table.setModel(new DefaultTableModel(
 			new Object[][] {
-        		{"Alloy Steel"},
-        		{"Cast Steel"},
-        		{"Brass"},
-        		{"Bronze"}
+
         	},
         	new String[] {
-        		"Explicit Material"
+        		"Explicit Materials"
         	}
 		));
+		for(int x = 0; x < exp_materials.size(); x++)
+			((DefaultTableModel)table.getModel()).addRow(new Object[] { exp_materials.get(x) });
 		table.setDragEnabled(false);
 		table.setEnabled(false);
 		table.setOpaque(true);
@@ -3571,7 +4574,7 @@ public class Window extends JFrame {
 
         	},
         	new String[] {
-        		"Inferred Material"
+        		"Inferred Materials"
         	}
 		));
 		table_3.setDragEnabled(false);
@@ -3585,15 +4588,14 @@ public class Window extends JFrame {
             public void actionPerformed(ActionEvent e) {
             	table_3.setModel(new DefaultTableModel(
             		new Object[][] {
-                    	{"Stainless Steel"},
-                    	{"Tool Steel"},
-                    	{"Die Steel"},
-                    	{"Copper"}
+                    	
                     },
                     new String[] {
-                    	"Inferred Material"
+                    	"Inferred Materials"
                     }
             	));
+            	for(int x = 0; x < inf_materials.size(); x++)
+            		((DefaultTableModel)table_3.getModel()).addRow(new Object[] { inf_materials.get(x) });
             }
         });
 		
@@ -3604,7 +4606,7 @@ public class Window extends JFrame {
 
                     },
                     new String[] {
-                    	"Inferred Material"
+                    	"Inferred Materials"
                     }
             	));
             }
@@ -3612,11 +4614,11 @@ public class Window extends JFrame {
 		
 		JPanel panel_4 = new JPanel();
 		panel_4.setBorder(new MatteBorder(0, 0, 1, 0, tab_color2));
-		tabbedPane.addTab("Capability Class", null, panel_4, null);
+		tabbedPane.addTab("<html>Production<br/>Capability</html>", null, panel_4, null);
 		panel_4.setBackground(tab_color1);
 		GridBagLayout gbl_panel_4 = new GridBagLayout();
 		gbl_panel_4.columnWidths = new int[]{0, 0};
-		gbl_panel_4.rowHeights = new int[]{0, 0, 0, 0};
+		gbl_panel_4.rowHeights = new int[]{200, 0, 200, 0};
 		gbl_panel_4.columnWeights = new double[]{1.0, Double.MIN_VALUE};
 		gbl_panel_4.rowWeights = new double[]{1.0, 0.0, 1.0, Double.MIN_VALUE};
 		panel_4.setLayout(gbl_panel_4);
@@ -3657,19 +4659,21 @@ public class Window extends JFrame {
 		table_4.getTableHeader().setPreferredSize(new Dimension(0, 30));
 		table_4.setModel(new DefaultTableModel(
 			new Object[][] {
-                {"Heavy and bulky part machining capability"},
-                {"Difficult and complex machining capability"},
-                {"Engineering design capability"},
-                {"Smallest wall thickness capability"}
+				{"Complexity", fin_exp_complexity, ""},
+				{"Variety", fin_exp_variety, ""},
+				{"Production range", fin_exp_range, ""},
 			},
-        	new String[] {
-        		"Explicit Capability Class"
-        	}
+			new String[] {
+				"Capability", "Explicit", "Inferred"
+			}
 		));
+		table_4.getColumnModel().getColumn(0).setPreferredWidth(300);
+		table_4.getColumnModel().getColumn(1).setPreferredWidth(150);
+		table_4.getColumnModel().getColumn(2).setPreferredWidth(150);
+		table_4.setAutoCreateColumnsFromModel(false);
 		table_4.setDragEnabled(false);
 		table_4.setEnabled(false);
 		table_4.setOpaque(true);
-		((DefaultTableCellRenderer)table_4.getTableHeader().getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
 		table_4.getTableHeader().setReorderingAllowed(false);
 		scrollPane_2.setViewportView(table_4);
 		
@@ -3722,6 +4726,61 @@ public class Window extends JFrame {
 		gbl_panel_10.rowWeights = new double[]{1.0, Double.MIN_VALUE};
 		panel_10.setLayout(gbl_panel_10);
 		
+		btnInferCapability_1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	table_4.setModel(new DefaultTableModel(
+            		new Object[][] {
+            			{"Complexity", fin_exp_complexity, fin_inf_complexity},
+            			{"Variety", fin_exp_variety, fin_inf_variety},
+            			{"Production range", fin_exp_range, fin_inf_range},
+            		},
+            		new String[] {
+            			"Capability", "Explicit", "Inferred"
+            		}
+            	));
+            }
+        });
+		
+		btnReset_2.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	table_4.setModel(new DefaultTableModel(
+	            	new Object[][] {
+						{"Complexity", fin_exp_complexity, ""},
+						{"Variety", fin_exp_variety, ""},
+						{"Production range", fin_exp_range, ""},
+					},
+					new String[] {
+						"Capability", "Explicit", "Inferred"
+					}
+            	));
+            }
+        });
+		
+		JPanel panel_21 = new JPanel();
+		panel_21.setBackground(tab_color1);
+		panel_21.setBorder(new MatteBorder(0, 0, 1, 0, tab_color2));
+		tabbedPane.addTab("<html>Extracted<br/>Capability</html>", null, panel_21, null);
+		GridBagLayout gbl_panel_21 = new GridBagLayout();
+		gbl_panel_21.columnWidths = new int[]{0, 0};
+		gbl_panel_21.rowHeights = new int[]{0, 0};
+		gbl_panel_21.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_panel_21.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		panel_21.setLayout(gbl_panel_21);
+		
+		JPanel panel_20 = new JPanel();
+		panel_20.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_20 = new GridBagConstraints();
+		gbc_panel_20.fill = GridBagConstraints.BOTH;
+		gbc_panel_20.gridx = 0;
+		gbc_panel_20.gridy = 0;
+		panel_21.add(panel_20, gbc_panel_20);
+		GridBagLayout gbl_panel_20 = new GridBagLayout();
+		gbl_panel_20.columnWidths = new int[]{0, 0};
+		gbl_panel_20.rowHeights = new int[]{300, 0};
+		gbl_panel_20.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_panel_20.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		panel_20.setLayout(gbl_panel_20);
+		
 		JScrollPane scrollPane_3 = new JScrollPane();
 		scrollPane_3.setBackground(Color.WHITE);
 		scrollPane_3.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
@@ -3730,59 +4789,32 @@ public class Window extends JFrame {
 		scrollPane_3.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
 		scrollPane_3.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
 		GridBagConstraints gbc_scrollPane_3 = new GridBagConstraints();
-		gbc_scrollPane_3.insets = new Insets(0, 50, 20, 50);
+		gbc_scrollPane_3.insets = new Insets(20, 50, 5, 50);
 		gbc_scrollPane_3.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane_3.gridx = 0;
 		gbc_scrollPane_3.gridy = 0;
-		panel_10.add(scrollPane_3, gbc_scrollPane_3);
+		panel_20.add(scrollPane_3, gbc_scrollPane_3);
 		
-		JTable table_5 = new JTable();
-		table_5.setBorder(new EmptyBorder(0, 0, 0, 0));
-		table_5.setFillsViewportHeight(true);
-		table_5.setRowHeight(20);
-		table_5.getTableHeader().setPreferredSize(new Dimension(0, 30));
-		table_5.setModel(new DefaultTableModel(
-			new Object[][] {
-
-        	},
-        	new String[] {
-        		"Inferred Capability Class"
-        	}
-		));
-		table_5.setDragEnabled(false);
-		table_5.setEnabled(false);
-		table_5.setOpaque(true);
-		((DefaultTableCellRenderer)table_5.getTableHeader().getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
-		table_5.getTableHeader().setReorderingAllowed(false);
-		scrollPane_3.setViewportView(table_5);
+		scrollPane_3.setColumnHeader(new JViewport() {
+		    @Override public Dimension getPreferredSize() {
+		        Dimension d = super.getPreferredSize();
+		        d.height = 30;
+		        return d;
+		    }
+		});
+		scrollPane_3.setViewportView(parsing_table);
 		
-		btnInferCapability_1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-            	table_5.setModel(new DefaultTableModel(
-            		new Object[][] {
-                    	{"Low tooling cost capability"},
-                    	{"Mechanism fabrication capability"},
-                    	{"Short lead time capability"}
-                    },
-                    new String[] {
-                    	"Inferred Capability Class"
-                    }
-            	));
-            }
-        });
-		
-		btnReset_2.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-            	table_5.setModel(new DefaultTableModel(
-            		new Object[][] {
-
-                    },
-                    new String[] {
-                    	"Inferred Capability Class"
-                    }
-            	));
-            }
-        });
+		JLabel lblbaseurl = new JLabel(company.getURL());
+		if(company.getURL().length() > 75)
+			lblbaseurl = new JLabel(company.getURL().substring(0, 73) + "...");
+		lblbaseurl.setForeground(Color.GRAY);
+		lblbaseurl.setFont(new Font("Consolas", Font.PLAIN, 12));
+		GridBagConstraints gbc_lblbaseurl = new GridBagConstraints();
+		gbc_lblbaseurl.fill = GridBagConstraints.BOTH;
+		gbc_lblbaseurl.insets = new Insets(0, 56, 10, 0);
+		gbc_lblbaseurl.gridx = 0;
+		gbc_lblbaseurl.gridy = 1;
+		panel_20.add(lblbaseurl, gbc_lblbaseurl);
 		
 		JPanel panel_5 = new JPanel();
 		panel_5.setBorder(new MatteBorder(0, 0, 1, 0, tab_color2));
@@ -3800,20 +4832,96 @@ public class Window extends JFrame {
 		btnExport.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnExport = new GridBagConstraints();
 		gbc_btnExport.fill = GridBagConstraints.BOTH;
-		gbc_btnExport.insets = new Insets(120, 228, 10, 228);
+		gbc_btnExport.insets = new Insets(120, 228, 5, 228);
 		gbc_btnExport.gridx = 0;
 		gbc_btnExport.gridy = 0;
 		panel_5.add(btnExport, gbc_btnExport);
 		
-		JButton btnExportServiceModel = new JButton("Export Service Model");
-		btnExportServiceModel.setUI(new ButtonUI2());
-		btnExportServiceModel.setFont(new Font("Arial", Font.PLAIN, 15));
-		GridBagConstraints gbc_btnExportServiceModel = new GridBagConstraints();
-		gbc_btnExportServiceModel.insets = new Insets(0, 228, 0, 228);
-		gbc_btnExportServiceModel.fill = GridBagConstraints.BOTH;
-		gbc_btnExportServiceModel.gridx = 0;
-		gbc_btnExportServiceModel.gridy = 1;
-		panel_5.add(btnExportServiceModel, gbc_btnExportServiceModel);
+		CustomCheckbox chckbxIncludeFactoryFile = new CustomCheckbox();
+		chckbxIncludeFactoryFile.setText("Include factory file");
+		chckbxIncludeFactoryFile.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_chckbxIncludeFactoryFile = new GridBagConstraints();
+		gbc_chckbxIncludeFactoryFile.gridx = 0;
+		gbc_chckbxIncludeFactoryFile.gridy = 1;
+		panel_5.add(chckbxIncludeFactoryFile, gbc_chckbxIncludeFactoryFile);
+		
+		btnExport.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	if(crawl_go)
+            		JOptionPane.showMessageDialog(frame, new JLabel("Please wait for the parser to finish.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+            	
+            	else {
+            		
+            		EventQueue.invokeLater(new Runnable() {
+    				    @Override
+    				    public void run() {
+    				    	fc = new JFileChooser("Desktop") {
+    							@Override
+    						    public void approveSelection() {
+    						        File f = getSelectedFile();
+    						        if(f.exists() && getDialogType() == SAVE_DIALOG) {
+    						            result = JOptionPane.showConfirmDialog(this, "File already exists. Overwrite?", "Confirm", JOptionPane.YES_NO_CANCEL_OPTION);
+    						            switch(result) {
+    						                case JOptionPane.YES_OPTION:
+    						                    super.approveSelection();
+    						                    return;
+    						                case JOptionPane.NO_OPTION:
+    						                    return;
+    						                case JOptionPane.CLOSED_OPTION:
+    						                    return;
+    						                case JOptionPane.CANCEL_OPTION:
+    						                    cancelSelection();
+    						                    return;
+    						            }
+    						        }
+    						        super.approveSelection();
+    						    }
+    						};
+    						
+    						FileNameExtensionFilter OWL_filter = new FileNameExtensionFilter("RDF/XML (*.owl)", "owl");
+    						fc.setFileFilter(OWL_filter);
+    						fc.setFocusable(false);
+    						fc.setDialogTitle("Export Factory");
+    						fc.setMultiSelectionEnabled(false);
+    						fc.setCurrentDirectory(new File("\\"));
+    						fc.changeToParentDirectory();
+    						JComboBox save_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
+    						save_combo.setFont(new Font("Arial", Font.PLAIN, 12));
+    						save_combo.setUI(new ComboUI(save_combo, true));
+    						save_combo.setBorder(new LineBorder(Color.GRAY));
+    						save_combo.setBackground(Color.WHITE);
+    						configureFileChooserUI(fc.getComponents(), true);
+    						
+    						result = fc.showSaveDialog(frame);
+    						if(result == 0)
+    						{
+    							try {
+    								OntModel factory = generateFinalFactory(false, chckbxIncludeFactoryFile.isSelected(), fin_inf_complexity, fin_inf_variety, fin_inf_range,
+    										fin_inf_min_tolerance, fin_inf_max_tolerance, fin_inf_min_length, fin_inf_max_length,
+    										fin_inf_min_diameter, fin_inf_max_diameter, fin_inf_min_roughness, fin_inf_max_roughness,
+    										fin_inf_min_thickness, fin_inf_max_thickness, fin_inf_max_weight);
+    								File selected_file = fc.getSelectedFile();
+    								String selected_file_path = selected_file.getAbsolutePath();
+    								if(selected_file_path.length() < 4 || !(selected_file_path.substring(selected_file_path.length() - 4, selected_file_path.length()).equals(".owl")))
+    									selected_file = new File(selected_file_path + ".owl");
+    								selected_file.createNewFile();
+    								FileOutputStream fos = new FileOutputStream(selected_file, false);
+    								OutputStreamWriter osw = new OutputStreamWriter(fos);
+    								RDFWriter writer = factory.getWriter("RDF/XML-ABBREV");
+    								writer.setProperty("showXmlDeclaration", false);
+    								writer.write(factory, osw, null);
+    								osw.close();
+    								fos.close();
+    							} catch (IOException e1) {
+    								System.out.println("ERROR SAVING: " + e1);
+    							}
+    						}
+    				    }
+    				});
+            		
+            	}
+            }
+        });
 		
 		JPanel panel_6 = new JPanel();
 		GridBagConstraints gbc_panel_6 = new GridBagConstraints();
@@ -3832,6 +4940,8 @@ public class Window extends JFrame {
 		JButton btnMenu = new JButton("Menu");
 		btnMenu.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				worker.cancel(true);
+				crawl_go = false;
 				menuPage();
 				return;
 			}

@@ -12,11 +12,6 @@ public class TabbedUI extends BasicTabbedPaneUI {
     public static ComponentUI createUI(JComponent c) {
         return new TabbedUI();
     }
-
-    /*protected void installDefaults() {
-        super.installDefaults();
-        tabAreaInsets.left = 20;
-    }*/
     
     protected Insets getContentBorderInsets(int tabPlacement) {
 		return new Insets(0, 0, 0, 0);
@@ -34,7 +29,7 @@ public class TabbedUI extends BasicTabbedPaneUI {
     }
 
     protected int calculateTabHeight(int tabPlacement, int tabIndex, int fontHeight) {
-    	return 30;
+    	return 40;
     }
 
     protected void paintTabBorder(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected) {}
