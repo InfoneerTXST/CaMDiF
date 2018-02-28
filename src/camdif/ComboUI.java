@@ -13,17 +13,19 @@ import javax.swing.plaf.basic.ComboPopup;
 
 public class ComboUI extends BasicComboBoxUI {
 	
-	private JComboBox comboBox;
-	private boolean showArrow;
+	private JComboBox combo_box;
+	private boolean show_arrow;
+	private Color track_color;
 	
-	public ComboUI(JComboBox comboBox, boolean showArrow) {
-		this.comboBox = comboBox;
-		this.showArrow = showArrow;
+	public ComboUI(JComboBox combo_box, boolean show_arrow, Color track_color) {
+		this.combo_box = combo_box;
+		this.show_arrow = show_arrow;
+		this.track_color = track_color;
 	}
 	
 	@Override
 	protected JButton createArrowButton() {
-		if(showArrow)
+		if(show_arrow)
 		{
 			JButton button = new JButton();
 			button.setText("\u25BE");
@@ -36,11 +38,11 @@ public class ComboUI extends BasicComboBoxUI {
 	
 	@Override
     protected ComboPopup createPopup() {
-        BasicComboPopup bcp = new BasicComboPopup(comboBox) {
+        BasicComboPopup bcp = new BasicComboPopup(combo_box) {
             @Override
             protected JScrollPane createScroller() {
                 JScrollPane scroll = new JScrollPane(list, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-                scroll.getVerticalScrollBar().setUI(new ScrollUI(new Color(220, 220, 220)));
+                scroll.getVerticalScrollBar().setUI(new ScrollUI(track_color));
                 return scroll;
             }
         };

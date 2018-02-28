@@ -25,10 +25,10 @@ public class ListNode implements Comparable {
 	}
 	
 	public String toString() {
-		if(indiv != null)
+		try {
 			return indiv.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
-		else
-			return null_label;
+		} catch(Exception e) {}
+		return null_label;
 	}
 	
 	public int compareTo(Object a) {

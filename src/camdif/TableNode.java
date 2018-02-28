@@ -20,7 +20,7 @@ public class TableNode implements Comparable {
 	
 	public String toString() {
 		if(individual != null)
-			return individual.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+			return individual.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm().trim();
 		else
 			return null_label;
 	}

@@ -14,7 +14,11 @@ public class JsonNodeWrapper implements Comparable {
 		name = "";
 		try {
 			name = j.get("http://www.w3.org/2004/02/skos/core#prefLabel").get(0).get("value").asText();
-		} catch(Exception a) {}
+		} catch(Exception a) {
+			try {
+				name = j.get("http://purl.org/dc/terms/title").get(0).get("value").asText();
+			} catch(Exception b) {}
+		}
 		matching_name = name.toLowerCase().replaceAll("&", " and ").trim().replaceAll("\\s+", " ");
 		if(matching_name.equals(" "))
 			matching_name = "";
@@ -39,7 +43,7 @@ public class JsonNodeWrapper implements Comparable {
 	}
 	
 	public String toString() {
-		return name;
+		return name.trim();
 	}
 	
 	public int compareTo(Object a) {

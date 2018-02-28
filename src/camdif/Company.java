@@ -27,7 +27,7 @@ public class Company {
 	}
 	
 	public Company(String name, String type, String business_type, String employees, String year_founded,
-				   String URL, String address, String city, String state, String zip) {
+			String URL, String address, String city, String state, String zip) {
 		this.name = name;
 		this.type = type;
 		this.business_type = business_type;
@@ -42,14 +42,6 @@ public class Company {
 	
 	public String getName() {
 		return name;
-	}
-	
-	public String getType() {
-		return type;
-	}
-	
-	public String getBusinessType() {
-		return business_type;
 	}
 	
 	public String getEmployees() {
@@ -80,19 +72,19 @@ public class Company {
 		return zip;
 	}
 	
+	public String getType() {
+		return type;
+	}
+	
+	public String getBusinessType() {
+		return business_type;
+	}
+	
 	public void setName(String name) {
 		this.name = name;
 	}
 	
-	public void setType(String type) {
-		this.type = type;
-	}
-	
-	public void setBusinessType(String business_type) {
-		this.business_type = business_type;
-	}
-	
-	public void setEmployess(String employees) {
+	public void setEmployees(String employees) {
 		this.employees = employees;
 	}
 	
@@ -118,6 +110,14 @@ public class Company {
 	
 	public void setZip(String zip) {
 		this.zip = zip;
+	}
+	
+	public void setType(String type) {
+		this.type = type;
+	}
+	
+	public void setBusinessType(String business_type) {
+		this.business_type = business_type;
 	}
 	
 }
