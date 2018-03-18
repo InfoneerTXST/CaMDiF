@@ -40,6 +40,19 @@ public class Company {
 		this.zip = zip;
 	}
 	
+	public Company(Company c) {
+		this.name = c.name;
+		this.type = c.type;
+		this.business_type = c.business_type;
+		this.employees = c.employees;
+		this.year_founded = c.year_founded;
+		this.URL = c.URL;
+		this.address = c.address;
+		this.city = c.city;
+		this.state = c.state;
+		this.zip = c.zip;
+	}
+	
 	public String getName() {
 		return name;
 	}
