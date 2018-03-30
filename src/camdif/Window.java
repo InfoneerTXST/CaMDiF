@@ -902,10 +902,10 @@ public class Window extends JFrame {
 		Individual indiv_2 = model.getIndividual(generateID(dummy_model));
 		dummy_model.createIndividual(generateID(dummy_model), ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000010"));
 		
-		try { company.setName(indiv_1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000149")).getObject().asResource().getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-		try { company.setEmployees(indiv_1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000874")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-		try { company.setYearFounded(indiv_1.getPropertyResourceValue(prop_hasYearFounded).getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
-		try { company.setURL(indiv_1.getPropertyResourceValue(prop_hasWebAddress).getProperty(RDFS.label).getObject().asLiteral().getLexicalForm()); } catch(Exception e) {}
+		try { company.setName(indiv_1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000149")).getObject().asResource().getProperty(RDFS.label).getObject().asLiteral().getLexicalForm().trim()); } catch(Exception e) {}
+		try { company.setEmployees(indiv_1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000874")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().asLiteral().getLexicalForm().trim()); } catch(Exception e) {}
+		try { company.setYearFounded(indiv_1.getPropertyResourceValue(prop_hasYearFounded).getProperty(RDFS.label).getObject().asLiteral().getLexicalForm().trim()); } catch(Exception e) {}
+		try { company.setURL(indiv_1.getPropertyResourceValue(prop_hasWebAddress).getProperty(RDFS.label).getObject().asLiteral().getLexicalForm().trim()); } catch(Exception e) {}
 		
 		String bt = getOntClassOf(indiv_1).toString();
 		if(bt.equals("http://infoneer.txstate.edu/ontology/MSDL_0000873"))
@@ -1909,7 +1909,16 @@ public class Window extends JFrame {
 								model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
 								model.read(selected_file.getAbsolutePath(), "RDF/XML");
 								setImportedInfo(model, 0);
-								buildPage2(true);
+								String name_save = company.getName() + " Factory";
+								OntModel exp = generateFinalExport(0, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "", null);
+								for(int x = 0; x < saved_factories.size(); x++) {
+									if(saved_factories.get(x).toString().equals(name_save)) {
+										saved_factories.remove(x);
+										break;
+									}
+								}
+			                	saved_factories.add(new OntModelWrapper(exp, name_save));
+			                	buildPage2(true);
 							}
 						}
 				    }
