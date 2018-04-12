@@ -29,7 +29,6 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -240,6 +239,8 @@ public class Window extends JFrame {
 	// file chooser
 	private static JFileChooser fc;
 	private static int result;
+	private static String import_path;
+	private static String export_path;
 	
 	// analysis
 	private static ArrayList<TableNode> exp_functions;
@@ -373,6 +374,8 @@ public class Window extends JFrame {
 		link_depths = new LinkedHashMap<>();
 		saved_match_data = new ArrayList<>();
 		chains = new ArrayList<>();
+		import_path = "\\";
+		export_path = "\\";
 		
 		mat_list = new ArrayList<>();
 		proc_list = new ArrayList<>();
@@ -1889,8 +1892,9 @@ public class Window extends JFrame {
 						fc.setFocusable(false);
 						fc.setDialogTitle("Import Factory");
 						fc.setMultiSelectionEnabled(false);
-						fc.setCurrentDirectory(new File("\\"));
-						fc.changeToParentDirectory();
+						if(import_path.equals("\\"))
+							import_path = export_path;
+						fc.setCurrentDirectory(new File(import_path));
 						JComboBox open_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
 						open_combo.setFont(new Font("Arial", Font.PLAIN, 12));
 						open_combo.setUI(new ComboUI(open_combo, true, tab_color1));
@@ -1904,21 +1908,29 @@ public class Window extends JFrame {
 							File selected_file = fc.getSelectedFile();
 							if(selected_file.exists())
 							{
-								OntModel model = ModelFactory.createOntologyModel(modelSpec);
-								OntDocumentManager model_dm = model.getDocumentManager();
-								model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
-								model.read(selected_file.getAbsolutePath(), "RDF/XML");
-								setImportedInfo(model, 0);
-								String name_save = company.getName() + " Factory";
-								OntModel exp = generateFinalExport(0, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "", null);
-								for(int x = 0; x < saved_factories.size(); x++) {
-									if(saved_factories.get(x).toString().equals(name_save)) {
-										saved_factories.remove(x);
-										break;
+								int f = 0;
+								try {
+									import_path = selected_file.getCanonicalPath();
+									OntModel model = ModelFactory.createOntologyModel(modelSpec);
+									OntDocumentManager model_dm = model.getDocumentManager();
+									model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
+									model.read(selected_file.getCanonicalPath(), "RDF/XML");
+									setImportedInfo(model, 0);
+									String name_save = company.getName() + " Factory";
+									OntModel exp = generateFinalExport(0, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "", null);
+									for(int x = 0; x < saved_factories.size(); x++) {
+										if(saved_factories.get(x).toString().equals(name_save)) {
+											saved_factories.remove(x);
+											break;
+										}
 									}
+				                	saved_factories.add(new OntModelWrapper(exp, name_save));
+								} catch(Exception e1) {
+									f = 1;
+									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
 								}
-			                	saved_factories.add(new OntModelWrapper(exp, name_save));
-			                	buildPage2(true);
+								if(f == 0)
+									buildPage2(true);
 							}
 						}
 				    }
@@ -4005,8 +4017,9 @@ public class Window extends JFrame {
 								fc.setFocusable(false);
 								fc.setDialogTitle("Export Factory");
 								fc.setMultiSelectionEnabled(false);
-								fc.setCurrentDirectory(new File("\\"));
-								fc.changeToParentDirectory();
+								if(export_path.equals("\\"))
+									export_path = import_path;
+								fc.setCurrentDirectory(new File(export_path));
 								JComboBox save_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
 								save_combo.setFont(new Font("Arial", Font.PLAIN, 12));
 								save_combo.setUI(new ComboUI(save_combo, true, tab_color1));
@@ -4020,10 +4033,11 @@ public class Window extends JFrame {
 									try {
 										OntModel exp = generateFinalExport(0, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "", null);
 										File selected_file = fc.getSelectedFile();
-										String selected_file_path = selected_file.getAbsolutePath();
+										String selected_file_path = selected_file.getCanonicalPath();
 										if(selected_file_path.length() < 4 || !(selected_file_path.substring(selected_file_path.length() - 4, selected_file_path.length()).equals(".owl")))
 											selected_file = new File(selected_file_path + ".owl");
 										selected_file.createNewFile();
+										export_path = selected_file.getCanonicalPath();
 										FileOutputStream fos = new FileOutputStream(selected_file, false);
 										OutputStreamWriter osw = new OutputStreamWriter(fos);
 										RDFWriter writer = exp.getWriter("RDF/XML-ABBREV");
@@ -4031,8 +4045,8 @@ public class Window extends JFrame {
 										writer.write(exp, osw, null);
 										osw.close();
 										fos.close();
-									} catch (IOException e1) {
-										System.out.println("ERROR SAVING: " + e1);
+									} catch(Exception e1) {
+										JOptionPane.showMessageDialog(frame, new JLabel("Unable to export.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
 									}
 								}
 						    }
@@ -6021,8 +6035,9 @@ public class Window extends JFrame {
     						fc.setFocusable(false);
     						fc.setDialogTitle("Export Factory");
     						fc.setMultiSelectionEnabled(false);
-    						fc.setCurrentDirectory(new File("\\"));
-    						fc.changeToParentDirectory();
+    						if(export_path.equals("\\"))
+								export_path = import_path;
+    						fc.setCurrentDirectory(new File(export_path));
     						JComboBox save_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
     						save_combo.setFont(new Font("Arial", Font.PLAIN, 12));
     						save_combo.setUI(new ComboUI(save_combo, true, tab_color1));
@@ -6039,10 +6054,11 @@ public class Window extends JFrame {
     										fin_inf_min_diameter, fin_inf_max_diameter, fin_inf_min_roughness, fin_inf_max_roughness,
     										fin_inf_min_thickness, fin_inf_max_thickness, fin_inf_max_weight, final_concepts);
     								File selected_file = fc.getSelectedFile();
-    								String selected_file_path = selected_file.getAbsolutePath();
+    								String selected_file_path = selected_file.getCanonicalPath();
     								if(selected_file_path.length() < 4 || !(selected_file_path.substring(selected_file_path.length() - 4, selected_file_path.length()).equals(".owl")))
     									selected_file = new File(selected_file_path + ".owl");
     								selected_file.createNewFile();
+    								export_path = selected_file.getCanonicalPath();
     								FileOutputStream fos = new FileOutputStream(selected_file, false);
     								OutputStreamWriter osw = new OutputStreamWriter(fos);
     								RDFWriter writer = exp.getWriter("RDF/XML-ABBREV");
@@ -6050,9 +6066,9 @@ public class Window extends JFrame {
     								writer.write(exp, osw, null);
     								osw.close();
     								fos.close();
-    							} catch (IOException e1) {
-    								System.out.println("ERROR SAVING: " + e1);
-    							}
+    							} catch(Exception e1) {
+									JOptionPane.showMessageDialog(frame, new JLabel("Unable to export.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+								}
     						}
     				    }
     				});
@@ -6698,8 +6714,9 @@ public class Window extends JFrame {
 						fc.setFocusable(false);
 						fc.setDialogTitle("Import Work Order");
 						fc.setMultiSelectionEnabled(false);
-						fc.setCurrentDirectory(new File("\\"));
-						fc.changeToParentDirectory();
+						if(import_path.equals("\\"))
+							import_path = export_path;
+						fc.setCurrentDirectory(new File(import_path));
 						JComboBox open_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
 						open_combo.setFont(new Font("Arial", Font.PLAIN, 12));
 						open_combo.setUI(new ComboUI(open_combo, true, tab_color1));
@@ -6713,12 +6730,20 @@ public class Window extends JFrame {
 							File selected_file = fc.getSelectedFile();
 							if(selected_file.exists())
 							{
-								OntModel model = ModelFactory.createOntologyModel(modelSpec);
-								OntDocumentManager model_dm = model.getDocumentManager();
-								model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
-								model.read(selected_file.getAbsolutePath(), "RDF/XML");
-								setImportedInfo(model, 2);
-								matchPage3();
+								int f = 0;
+								try {
+									import_path = selected_file.getCanonicalPath();
+									OntModel model = ModelFactory.createOntologyModel(modelSpec);
+									OntDocumentManager model_dm = model.getDocumentManager();
+									model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
+									model.read(selected_file.getCanonicalPath(), "RDF/XML");
+									setImportedInfo(model, 2);
+								} catch(Exception e1) {
+									f = 1;
+									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+								}
+								if(f == 0)
+									matchPage3();
 							}
 						}
 				    }
@@ -7899,8 +7924,9 @@ public class Window extends JFrame {
 						fc.setFocusable(false);
 						fc.setDialogTitle("Export Factory");
 						fc.setMultiSelectionEnabled(false);
-						fc.setCurrentDirectory(new File("\\"));
-						fc.changeToParentDirectory();
+						if(export_path.equals("\\"))
+							export_path = import_path;
+						fc.setCurrentDirectory(new File(export_path));
 						JComboBox save_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
 						save_combo.setFont(new Font("Arial", Font.PLAIN, 12));
 						save_combo.setUI(new ComboUI(save_combo, true, tab_color1));
@@ -7908,7 +7934,7 @@ public class Window extends JFrame {
 						save_combo.setBackground(Color.WHITE);
 						configureFileChooserUI(fc.getComponents(), true, 2);
 						
-						result = fc.showSaveDialog(frame);	
+						result = fc.showSaveDialog(frame);
 						if(result == 0)
 						{
 							try {
@@ -7917,10 +7943,11 @@ public class Window extends JFrame {
 									final_concepts.add(work_order_list_model.getElementAt(x));
 								OntModel exp = generateFinalExport(2, false, "", "", "", "", "", "", "", "", "", "", "", "", "", "", final_concepts);
 								File selected_file = fc.getSelectedFile();
-								String selected_file_path = selected_file.getAbsolutePath();
+								String selected_file_path = selected_file.getCanonicalPath();
 								if(selected_file_path.length() < 4 || !(selected_file_path.substring(selected_file_path.length() - 4, selected_file_path.length()).equals(".owl")))
 									selected_file = new File(selected_file_path + ".owl");
 								selected_file.createNewFile();
+								export_path = selected_file.getCanonicalPath();
 								FileOutputStream fos = new FileOutputStream(selected_file, false);
 								OutputStreamWriter osw = new OutputStreamWriter(fos);
 								RDFWriter writer = exp.getWriter("RDF/XML-ABBREV");
@@ -7928,8 +7955,8 @@ public class Window extends JFrame {
 								writer.write(exp, osw, null);
 								osw.close();
 								fos.close();
-							} catch (IOException e1) {
-								System.out.println("ERROR SAVING: " + e1);
+							} catch(Exception e1) {
+								JOptionPane.showMessageDialog(frame, new JLabel("Unable to export.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
 							}
 						}
 				    }
@@ -8521,8 +8548,9 @@ public class Window extends JFrame {
 						fc.setFocusable(false);
 						fc.setDialogTitle("Export Supply Chain");
 						fc.setMultiSelectionEnabled(false);
-						fc.setCurrentDirectory(new File("\\"));
-						fc.changeToParentDirectory();
+						if(export_path.equals("\\"))
+							export_path = import_path;
+						fc.setCurrentDirectory(new File(export_path));
 						JComboBox save_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
 						save_combo.setFont(new Font("Arial", Font.PLAIN, 12));
 						save_combo.setUI(new ComboUI(save_combo, true, tab_color1));
@@ -8549,10 +8577,11 @@ public class Window extends JFrame {
 								supply_chain_indiv.addComment(supply_chain_comment, "en");
 								
 								File selected_file = fc.getSelectedFile();
-								String selected_file_path = selected_file.getAbsolutePath();
+								String selected_file_path = selected_file.getCanonicalPath();
 								if(selected_file_path.length() < 4 || !(selected_file_path.substring(selected_file_path.length() - 4, selected_file_path.length()).equals(".owl")))
 									selected_file = new File(selected_file_path + ".owl");
 								selected_file.createNewFile();
+								export_path = selected_file.getCanonicalPath();
 								FileOutputStream fos = new FileOutputStream(selected_file, false);
 								OutputStreamWriter osw = new OutputStreamWriter(fos);
 								RDFWriter writer = exp.getWriter("RDF/XML-ABBREV");
@@ -8560,8 +8589,8 @@ public class Window extends JFrame {
 								writer.write(exp, osw, null);
 								osw.close();
 								fos.close();
-							} catch (IOException e1) {
-								System.out.println("ERROR SAVING: " + e1);
+							} catch(Exception e1) {
+								JOptionPane.showMessageDialog(frame, new JLabel("Unable to export.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
 							}
 						}
 				    }
