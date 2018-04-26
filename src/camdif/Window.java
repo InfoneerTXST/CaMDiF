@@ -29,6 +29,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +61,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+
+import org.apache.jena.iri.IRI;
 import org.apache.jena.ontology.Individual;
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntDocumentManager;
@@ -75,6 +78,8 @@ import org.apache.jena.rdf.model.RDFWriter;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.riot.system.IRIResolver;
+import org.apache.jena.util.FileManager;
 import org.apache.jena.util.iterator.ExtendedIterator;
 import org.apache.jena.vocabulary.RDFS;
 import org.jsoup.Jsoup;
@@ -173,6 +178,7 @@ public class Window extends JFrame {
 	private static Property prop_requiresLowerTolerance;
 	private static Property prop_requiresUpperTolerance;
 	private static Property prop_hasPart;
+	private static Property prop_hasMachinePart;
 	private static Property prop_hasManufacturer;
 	private static Property prop_hasBuildVolume;
 	private static Property prop_hasMeasurement;
@@ -351,7 +357,8 @@ public class Window extends JFrame {
 		prop_requiresCapability = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001016");
 		prop_requiresLowerTolerance = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001075");
 		prop_requiresUpperTolerance = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001074");
-		prop_hasPart = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000130");
+		prop_hasPart = ontology.getProperty("http://purl.obolibrary.org/obo/BFO_0000051");
+		prop_hasMachinePart = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000130");
 		prop_hasManufacturer = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000179");
 		prop_hasBuildVolume = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000714");
 		prop_hasMeasurement = ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000924");
@@ -1044,19 +1051,36 @@ public class Window extends JFrame {
 				Resource r = n.next().asResource();
 				for(StmtIterator si = r.listProperties(prop_hasSkillCapability); si.hasNext(); ) {
 					try {
-						RDFNode obj = si.next().getObject();
-						Individual indiv = ontology.getIndividual(obj.toString());
-						boolean exists = false;
-						for(int x = 0; x < capability_individuals.size(); x++) {
-							if(capability_individuals.get(x).getIndividual().getURI().equals(indiv.getURI())) {
-								exists = true;
-								x = capability_individuals.size();
-							}
+						Resource obj = si.next().getObject().asResource();
+						String compare_name = obj.getProperty(RDFS.label).getObject().asLiteral().getLexicalForm();
+						Individual indiv = null;
+						boolean found = false;
+						for(ExtendedIterator<Individual> ind = ontology.listIndividuals(); ind.hasNext() && !found; ) {
+							try {
+								Individual i = ind.next();
+								if(i.getProperty(RDFS.label).getObject().asLiteral().getLexicalForm().equals(compare_name)) {
+									indiv = i;
+									found = true;
+								}
+							} catch(Exception eee) {}
 						}
-						if(!exists) {
-							ListNode ln = new ListNode(indiv, class_Skill, "");
-							try { ln.setSkillLevel(model.getIndividual(indiv.getPropertyResourceValue(prop_hasMeasurement).getURI()).getPropertyValue(prop_hasMeasurementValue).toString()); } catch(Exception e) { ln.setSkillLevel("Very low"); }
-							capability_individuals.add(ln);
+						if(indiv != null) {
+							boolean exists = false;
+							for(int x = 0; x < capability_individuals.size(); x++) {
+								if(capability_individuals.get(x).getIndividual().getURI().equals(indiv.getURI())) {
+									exists = true;
+									x = capability_individuals.size();
+								}
+							}
+							if(!exists) {
+								ListNode ln = new ListNode(indiv, class_Skill, "");
+								ln.setSkillLevel("Very low");
+								try {
+									Resource obj2 = obj.getPropertyResourceValue(prop_hasMeasurement);
+									ln.setSkillLevel(obj2.getProperty(prop_hasMeasurementValue).getObject().toString());
+								} catch(Exception e) {}
+								capability_individuals.add(ln);
+							}
 						}
 					} catch(Exception aaa) {}
 				}
@@ -1610,13 +1634,16 @@ public class Window extends JFrame {
 						factory_comment += "\nSoftware: " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
 					}
 					else if(s.equals(uri_Skill)) {
+						String skill_name = i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+						Individual skill = exp.createIndividual(getOntClassOf(i));
+						skill.setLabel(skill_name, "en");
 						Individual worker_indiv = exp.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001062"));
 						Individual measurement_indiv = exp.createIndividual(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000926"));
 						measurement_indiv.addProperty(prop_hasMeasurementValue, l.getSkillLevel());
-						i.addProperty(prop_hasMeasurement, measurement_indiv);
-						worker_indiv.addProperty(prop_hasSkillCapability, i);
+						skill.addProperty(prop_hasMeasurement, measurement_indiv);
+						worker_indiv.addProperty(prop_hasSkillCapability, skill);
 						factory_indiv.addProperty(prop_hasPart, worker_indiv);
-						factory_comment += "\nSkill (" + l.getSkillLevel().toLowerCase() + ")" + ": " + i.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
+						factory_comment += "\nSkill (" + l.getSkillLevel().toLowerCase() + ")" + ": " + skill_name;
 					}
 				}
 			}
@@ -1911,10 +1938,13 @@ public class Window extends JFrame {
 								int f = 0;
 								try {
 									import_path = selected_file.getCanonicalPath();
+									InputStream in = FileManager.get().open("file:///" + import_path.replace("\\", "/"));
+									if(in == null)
+							            throw new IllegalArgumentException();
 									OntModel model = ModelFactory.createOntologyModel(modelSpec);
 									OntDocumentManager model_dm = model.getDocumentManager();
 									model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
-									model.read(selected_file.getCanonicalPath(), "RDF/XML");
+									model.read(in, "RDF/XML");
 									setImportedInfo(model, 0);
 									String name_save = company.getName() + " Factory";
 									OntModel exp = generateFinalExport(0, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "", null);
@@ -1927,6 +1957,7 @@ public class Window extends JFrame {
 				                	saved_factories.add(new OntModelWrapper(exp, name_save));
 								} catch(Exception e1) {
 									f = 1;
+									System.out.println(e1);
 									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
 								}
 								if(f == 0)
@@ -3372,7 +3403,9 @@ public class Window extends JFrame {
 							
 							String val1 = "-", val2 = "-", val3 = "-", val4 = "-", val5 = "-", val6 = "-", val7 = "-",
 									val8 = "-", val9 = "-", val10 = "-", val11 = "-", val12 = "-", val13 = "-", val14 = "-",
-									val15 = "-", val16 = "-", val17 = "-", val18 = "-", val19 = "-", val20 = "-", val21 = "-";
+									val15 = "-", val16 = "-", val17 = "-", val18 = "-", val19 = "-", val20 = "-", val21 = "-",
+									val22 = "-", val23 = "-", val24 = "-", val25 = "-", val26 = "-", val27 = "-", val28 = "-",
+									val29 = "-", val30 = "-";
 							
 							Individual selected_indiv = ln.getIndividual();
 							
@@ -3386,287 +3419,412 @@ public class Window extends JFrame {
 								} catch(Exception e) { val1 = "-"; }
 								
 								try { // table length
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000184")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val2 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val2.indexOf("^") != -1)
 												val2 = val2.substring(0, val2.indexOf("^"));
-											try { val2 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val2 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val2 = "-"; }
 									
 								try { // table width
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000185")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val3 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val3.indexOf("^") != -1)
 												val3 = val3.substring(0, val3.indexOf("^"));
-											try { val3 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val3 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val3 = "-"; }
 								
 								try { // max load capacity
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000186")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val4 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val4.indexOf("^") != -1)
 												val4 = val4.substring(0, val4.indexOf("^"));
-											try { val4 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val4 += " lb";
 											break;
 										}
 									}
 								} catch(Exception e) { val4 = "-"; }
 								
 								try { // max spindle speed
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000183")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val5 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val5.indexOf("^") != -1)
 												val5 = val5.substring(0, val5.indexOf("^"));
-											try { val5 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val5 += " rpm";
 											break;
 										}
 									}
 								} catch(Exception e) { val5 = "-"; }
 								
 								try { // spindle power
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000182")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val6 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val6.indexOf("^") != -1)
 												val6 = val6.substring(0, val6.indexOf("^"));
-											try { val6 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val6 += " hp";
 											break;
 										}
 									}
 								} catch(Exception e) { val6 = "-"; }
 								
 								try { // spindle torque
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000181")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val7 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val7.indexOf("^") != -1)
 												val7 = val7.substring(0, val7.indexOf("^"));
-											try { val7 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val7 += " ft-lb";
 											break;
 										}
 									}
 								} catch(Exception e) { val7 = "-"; }
 
 								try { // rapid traverse X
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val8 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val8.indexOf("^") != -1)
 												val8 = val8.substring(0, val8.indexOf("^"));
-											try { val8 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val8 += " in/min";
 											break;
 										}
 									}
 								} catch(Exception e) { val8 = "-"; }
 									
 								try { // rapid traverse Y
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val9 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val9.indexOf("^") != -1)
 												val9 = val9.substring(0, val9.indexOf("^"));
-											try { val9 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val9 += " in/min";
 											break;
 										}
 									}
 								} catch(Exception e) { val9 = "-"; }
 								
 								try { // rapid traverse Z
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val10 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val10.indexOf("^") != -1)
 												val10 = val10.substring(0, val10.indexOf("^"));
-											try { val10 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val10 += " in/min";
 											break;
 										}
 									}
 								} catch(Exception e) { val10 = "-"; }
 								
 								try { // cutting feed rate X
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val11 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val11.indexOf("^") != -1)
 												val11 = val11.substring(0, val11.indexOf("^"));
-											try { val11 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val11 += " in/min";
 											break;
 										}
 									}
 								} catch(Exception e) { val11 = "-"; }
 								
 								try { // cutting feed rate Y
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val12 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val12.indexOf("^") != -1)
 												val12 = val12.substring(0, val12.indexOf("^"));
-											try { val12 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val12 += " in/min";
 											break;
 										}
 									}
 								} catch(Exception e) { val12 = "-"; }
 								
 								try { // cutting feed rate Z
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val13 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val13.indexOf("^") != -1)
 												val13 = val13.substring(0, val13.indexOf("^"));
-											try { val13 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val13 += " in/min";
 											break;
 										}
 									}
 								} catch(Exception e) { val13 = "-"; }
 								
 								try { // travel X
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val14 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val14.indexOf("^") != -1)
 												val14 = val14.substring(0, val14.indexOf("^"));
-											try { val14 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val14 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val14 = "-"; }
 								
 								try { // travel Y
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val15 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val15.indexOf("^") != -1)
 												val15 = val15.substring(0, val15.indexOf("^"));
-											try { val15 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val15 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val15 = "-"; }
 								
 								try { // travel Z
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val16 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val16.indexOf("^") != -1)
 												val16 = val16.substring(0, val16.indexOf("^"));
-											try { val16 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val16 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val16 = "-"; }
 								
 								try { // max num of tools
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000193")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val17 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val17.indexOf("^") != -1)
 												val17 = val17.substring(0, val17.indexOf("^"));
-											try { val17 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
 											break;
 										}
 									}
 								} catch(Exception e) { val17 = "-"; }
 								
 								try { // tool to tool time
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000192")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val18 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val18.indexOf("^") != -1)
 												val18 = val18.substring(0, val18.indexOf("^"));
-											try { val18 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val18 += " sec";
 											break;
 										}
 									}
 								} catch(Exception e) { val18 = "-"; }
 								
 								try { // chip to chip time
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000191")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val19 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val19.indexOf("^") != -1)
 												val19 = val19.substring(0, val19.indexOf("^"));
-											try { val19 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val19 += " sec";
 											break;
 										}
 									}
 								} catch(Exception e) { val19 = "-"; }
 								
 								try { // max tool length
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000189")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val20 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val20.indexOf("^") != -1)
 												val20 = val20.substring(0, val20.indexOf("^"));
-											try { val20 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val20 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val20 = "-"; }
 
 								try { // max tool weight
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
 										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
 											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000190")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
 											val21 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val21.indexOf("^") != -1)
 												val21 = val21.substring(0, val21.indexOf("^"));
-											try { val21 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val21 += " lb";
 											break;
 										}
 									}
 								} catch(Exception e) { val21 = "-"; }
 								
+								try { // travel angle A
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val22 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val22.indexOf("^") != -1)
+												val22 = val22.substring(0, val22.indexOf("^"));
+											val22 += " deg";
+											break;
+										}
+									}
+								} catch(Exception e) { val22 = "-"; }
+								
+								try { // travel angle B
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val23 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val23.indexOf("^") != -1)
+												val23 = val23.substring(0, val23.indexOf("^"));
+											val23 += " deg";
+											break;
+										}
+									}
+								} catch(Exception e) { val23 = "-"; }
+								
+								try { // travel angle C
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val24 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val24.indexOf("^") != -1)
+												val24 = val24.substring(0, val24.indexOf("^"));
+											val24 += " deg";
+											break;
+										}
+									}
+								} catch(Exception e) { val24 = "-"; }
+								
+								try { // cutting feed rate A
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val25 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val25.indexOf("^") != -1)
+												val25 = val25.substring(0, val25.indexOf("^"));
+											val25 += " deg/sec";
+											break;
+										}
+									}
+								} catch(Exception e) { val25 = "-"; }
+								
+								try { // cutting feed rate B
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val26 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val26.indexOf("^") != -1)
+												val26 = val26.substring(0, val26.indexOf("^"));
+											val26 += " deg/sec";
+											break;
+										}
+									}
+								} catch(Exception e) { val26 = "-"; }
+								
+								try { // cutting feed rate C
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val27 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val27.indexOf("^") != -1)
+												val27 = val27.substring(0, val27.indexOf("^"));
+											val27 += " deg/sec";
+											break;
+										}
+									}
+								} catch(Exception e) { val27 = "-"; }
+								
+								try { // max torque A
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val28 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val28.indexOf("^") != -1)
+												val28 = val28.substring(0, val28.indexOf("^"));
+											val28 += " ft-lb";
+											break;
+										}
+									}
+								} catch(Exception e) { val28 = "-"; }
+								
+								try { // max torque B
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val29 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val29.indexOf("^") != -1)
+												val29 = val29.substring(0, val29.indexOf("^"));
+											val29 += " ft-lb";
+											break;
+										}
+									}
+								} catch(Exception e) { val29 = "-"; }
+								
+								try { // max torque C
+									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
+											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+											val30 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+											if(val30.indexOf("^") != -1)
+												val30 = val30.substring(0, val30.indexOf("^"));
+											val30 += " ft-lb";
+											break;
+										}
+									}
+								} catch(Exception e) { val30 = "-"; }
+								
 								message_info = new JLabel("<html><body>"
-										+ "<p style=\"margin-bottom:-12\"><b>Machine Property</b></p>"
+										+ "<p style=\"margin-bottom:-12\"><b>Property</b></p>"
 										+ "<br><p style=\"margin-bottom:-12\">manufacturer</p>"
 										+ "<br><p style=\"margin-bottom:-12\">table length</p>"
 										+ "<br><p style=\"margin-bottom:-12\">table width</p>"
@@ -3687,7 +3845,16 @@ public class Window extends JFrame {
 										+ "<br><p style=\"margin-bottom:-12\">tool to tool time</p>"
 										+ "<br><p style=\"margin-bottom:-12\">chip to chip time</p>"
 										+ "<br><p style=\"margin-bottom:-12\">max tool length</p>"
-										+ "<br>max tool weight"
+										+ "<br><p style=\"margin-bottom:-12\">max tool weight</p>"
+										+ "<br><p style=\"margin-bottom:-12\">travel angle A</p>"
+										+ "<br><p style=\"margin-bottom:-12\">travel angle B</p>"
+										+ "<br><p style=\"margin-bottom:-12\">travel angle C</p>"
+										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate A</p>"
+										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate B</p>"
+										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate C</p>"
+										+ "<br><p style=\"margin-bottom:-12\">max torque A</p>"
+										+ "<br><p style=\"margin-bottom:-12\">max torque B</p>"
+										+ "<br>max torque C"
 										+ "</body></html>", SwingConstants.LEFT);
 								
 								message_info2 = new JLabel("<html><body>"
@@ -3712,7 +3879,16 @@ public class Window extends JFrame {
 										+ "<br><p style=\"margin-bottom:-12\">" + val18 + "</p>"
 										+ "<br><p style=\"margin-bottom:-12\">" + val19 + "</p>"
 										+ "<br><p style=\"margin-bottom:-12\">" + val20 + "</p>"
-										+ "<br>" + val21
+										+ "<br><p style=\"margin-bottom:-12\">" + val21 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val22 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val23 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val24 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val25 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val26 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val27 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val28 + "</p>"
+										+ "<br><p style=\"margin-bottom:-12\">" + val29 + "</p>"
+										+ "<br>" + val30
 										+ "</body></html>", SwingConstants.LEFT);
 							}
 							else if(s.equals(uri_3DPrinter)) {
@@ -3732,7 +3908,7 @@ public class Window extends JFrame {
 											val2 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val2.indexOf("^") != -1)
 												val2 = val2.substring(0, val2.indexOf("^"));
-											try { val2 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val2 += " in";
 											break;
 										}
 									}
@@ -3746,7 +3922,7 @@ public class Window extends JFrame {
 											val3 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val3.indexOf("^") != -1)
 												val3 = val3.substring(0, val3.indexOf("^"));
-											try { val3 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val3 += " in";
 											break;
 										}
 									}
@@ -3760,14 +3936,14 @@ public class Window extends JFrame {
 											val4 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
 											if(val4.indexOf("^") != -1)
 												val4 = val4.substring(0, val4.indexOf("^"));
-											try { val4 += " " + getOntClassOf(ontology.getIndividual(MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000039")).getObject().asResource().getURI())).listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm(); } catch(Exception e1) {}
+											val4 += " in";
 											break;
 										}
 									}
 								} catch(Exception e) { val4 = "-"; }
 								
 								message_info = new JLabel("<html><body>"
-										+ "<p style=\"margin-bottom:-12\"><b>Machine Property</b></p>"
+										+ "<p style=\"margin-bottom:-12\"><b>Property</b></p>"
 										+ "<br><p style=\"margin-bottom:-12\">manufacturer</p>"
 										+ "<br><p style=\"margin-bottom:-12\">build volume length</p>"
 										+ "<br><p style=\"margin-bottom:-12\">build volume width</p>"
@@ -3783,13 +3959,8 @@ public class Window extends JFrame {
 										+ "</body></html>", SwingConstants.LEFT);
 							}
 							
-							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement("unit"), Matcher.quoteReplacement("")));
 							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement(".0 "), Matcher.quoteReplacement(" ")));
-							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement("Second"), Matcher.quoteReplacement("sec")));
-							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement(" per "), Matcher.quoteReplacement("/")));
-							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement("horsepower"), Matcher.quoteReplacement("hp")));
-							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement("minute"), Matcher.quoteReplacement("min")));
-
+							
 							message_info.setFont(new Font("Arial", Font.PLAIN, 12));
 							message_panel.add(message_info);
 							info_panel.add(message_panel, gbc_message_info);
@@ -4567,7 +4738,7 @@ public class Window extends JFrame {
 			Individual indiv = equipment_individuals.get(x).getIndividual();
 			
 			int feed_drives = 0;
-			for(StmtIterator si = indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+			for(StmtIterator si = indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 				if(isCategoryOf(getOntClassOf(ontology.getIndividual(si.next().getObject().asResource().getURI())), class_FeedDrive, true))
 					feed_drives++;
 			}
@@ -6145,7 +6316,7 @@ public class Window extends JFrame {
 				Individual indiv = equipment_individuals.get(x).getIndividual();
 				
 				int feed_drives = 0;
-				for(StmtIterator si = indiv.listProperties(prop_hasPart); si.hasNext(); ) {
+				for(StmtIterator si = indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
 					if(isCategoryOf(getOntClassOf(ontology.getIndividual(si.next().getObject().asResource().getURI())), class_FeedDrive, true))
 						feed_drives++;
 				}
@@ -6733,10 +6904,13 @@ public class Window extends JFrame {
 								int f = 0;
 								try {
 									import_path = selected_file.getCanonicalPath();
+									InputStream in = FileManager.get().open("file:///" + import_path.replace("\\", "/"));
+									if(in == null)
+							            throw new IllegalArgumentException();
 									OntModel model = ModelFactory.createOntologyModel(modelSpec);
 									OntDocumentManager model_dm = model.getDocumentManager();
 									model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
-									model.read(selected_file.getCanonicalPath(), "RDF/XML");
+									model.read(in, "RDF/XML");
 									setImportedInfo(model, 2);
 								} catch(Exception e1) {
 									f = 1;
