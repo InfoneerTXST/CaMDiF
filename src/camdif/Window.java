@@ -51,6 +51,7 @@ import java.awt.Insets;
 import java.awt.RenderingHints;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -61,7 +62,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-
 import org.apache.jena.iri.IRI;
 import org.apache.jena.ontology.Individual;
 import org.apache.jena.ontology.OntClass;
@@ -70,6 +70,7 @@ import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.ontology.OntResource;
 import org.apache.jena.ontology.OntTools;
+import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
@@ -78,6 +79,8 @@ import org.apache.jena.rdf.model.RDFWriter;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.reasoner.Reasoner;
+import org.apache.jena.reasoner.ValidityReport;
 import org.apache.jena.riot.system.IRIResolver;
 import org.apache.jena.util.FileManager;
 import org.apache.jena.util.iterator.ExtendedIterator;
@@ -196,6 +199,7 @@ public class Window extends JFrame {
 	private static boolean crawl_go;
 	
 	// general
+	private static String version = "1.20.0";
 	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM;
 	private static OntModel ontology;
 	private static OntModel demo_factory;
@@ -383,7 +387,7 @@ public class Window extends JFrame {
 		chains = new ArrayList<>();
 		import_path = "\\";
 		export_path = "\\";
-		
+
 		mat_list = new ArrayList<>();
 		proc_list = new ArrayList<>();
 		OntClass mat_cap = ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000676");
@@ -399,6 +403,7 @@ public class Window extends JFrame {
 					proc_list.add(new IndividualWrapper(ei2.next()));
 			}
 		}
+
 		Collections.sort(mat_list, new Comparator() {
 			public int compare(Object o1, Object o2) {
 	            return (o1.toString().toLowerCase().compareTo(o2.toString().toLowerCase()));
@@ -539,7 +544,11 @@ public class Window extends JFrame {
 					
 					// ---------- LOAD ONTOLOGY ----------
 					ontology = ModelFactory.createOntologyModel(modelSpec);
+					//ontology = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC);
+					//InfModel inf_model = ModelFactory.createInfModel(PelletReasonerFactory.theInstance().create(), ontology);
+					//ontology = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC, infModel);
 					ontology.read("information/MSDL.owl", "RDF/XML");
+					//ontology.prepare();
 					
 					// ---------- LOAD THESAURUS ----------
 					ObjectMapper mapper = new ObjectMapper();         
@@ -583,7 +592,7 @@ public class Window extends JFrame {
 					thesaurus_tree = new JTree();
 					thesaurus_tree.setModel(new DefaultTreeModel(thesaurus_tree_root));
 				} catch(Exception e1) {
-					e1.printStackTrace();
+					e1.printStackTrace(System.out);
 					System.exit(0);
 				}
 				return null;
@@ -591,11 +600,13 @@ public class Window extends JFrame {
 			
 			@Override
 			protected void done() {
-				frame.dispose();
-				frame = new Window("CaMDiF Tool");
-				frame.setResizable(false);
-				frame.setUndecorated(false);
-				frame.setVisible(true);
+				try {
+					frame.dispose();
+					frame = new Window("CaMDiF Tool");
+					frame.setResizable(false);
+					frame.setUndecorated(false);
+					frame.setVisible(true);
+				} catch(Exception ee) { ee.printStackTrace(System.out); }
 	        }
 		};
 	    worker.execute();
@@ -1796,9 +1807,9 @@ public class Window extends JFrame {
 		getContentPane().add(panel, BorderLayout.CENTER);
 		GridBagLayout gbl_panel = new GridBagLayout();
 		gbl_panel.columnWidths = new int[]{0, 0};
-		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0};
+		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0, 0};
 		gbl_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel.setLayout(gbl_panel);
 		
 		JButton btnBuild = new JButton("Build");
@@ -1836,7 +1847,7 @@ public class Window extends JFrame {
 		btnMatch.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnMatch = new GridBagConstraints();
 		gbc_btnMatch.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnMatch.insets = new Insets(0, 225, 5, 225);
+		gbc_btnMatch.insets = new Insets(0, 225, 10, 225);
 		gbc_btnMatch.gridx = 0;
 		gbc_btnMatch.gridy = 2;
 		panel.add(btnMatch, gbc_btnMatch);
@@ -1847,13 +1858,30 @@ public class Window extends JFrame {
             }
         });
 		
+		JButton btnAbout = new JButton("About");
+		btnAbout.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnAbout = new GridBagConstraints();
+		gbc_btnAbout.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnAbout.insets = new Insets(0, 225, 5, 225);
+		gbc_btnAbout.gridx = 0;
+		gbc_btnAbout.gridy = 3;
+		panel.add(btnAbout, gbc_btnAbout);
+		btnAbout.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	String about_info = "<html>CaMDiF<br>Version " + version + "<br><br>About - CaMDiF is developed by the Engineering Informatics Research group (Infoneer) at<br>Texas State University."
+            			+ " Funding for development of CaMDiF is provided by the Digital Design<br>and Manufacturing Innovation Institute (DMDII) under contract #0220160024."
+            			+ "<br><br>Copyright - This software is licensed under a Creative Commons Attribution 4.0 International<br>License CC BY-NC-Nd-4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/), with the<br>exception of DMDII members.<br><br></html>";
+            	JOptionPane.showMessageDialog(frame, new JLabel(about_info, SwingConstants.CENTER), "About", JOptionPane.PLAIN_MESSAGE, null);
+            }
+        });
+		
 		JButton btnExit = new JButton("Exit");
 		btnExit.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnExit = new GridBagConstraints();
-		gbc_btnExit.insets = new Insets(40, 290, 0, 290);
+		gbc_btnExit.insets = new Insets(42, 290, 0, 290);
 		gbc_btnExit.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnExit.gridx = 0;
-		gbc_btnExit.gridy = 3;
+		gbc_btnExit.gridy = 4;
 		panel.add(btnExit, gbc_btnExit);
 		btnExit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -1965,7 +1993,7 @@ public class Window extends JFrame {
 							}
 						}
 				    }
-				});	
+				});
 			
 			}
 		});
@@ -4756,7 +4784,8 @@ public class Window extends JFrame {
 				}
 				if(!exists) {
 					TableNode add_node = new TableNode(i, "");
-					exp_functions.add(add_node);
+					if(!add_node.toString().equals(""))
+						exp_functions.add(add_node);
 				}
 			}
 			
@@ -4771,7 +4800,8 @@ public class Window extends JFrame {
 				}
 				if(!exists) {
 					TableNode add_node = new TableNode(i, "");
-					exp_materials.add(add_node);
+					if(!add_node.toString().equals(""))
+						exp_materials.add(add_node);
 				}
 			}
 					
@@ -5152,7 +5182,8 @@ public class Window extends JFrame {
     					}
     					if(!exists) {
     						TableNode add_node = new TableNode(i2, "");
-    						inf_functions.add(add_node);
+    						if(!add_node.toString().equals(""))
+    							inf_functions.add(add_node);
     					}
     				}
     			} catch(Exception aaa) {}
@@ -5182,7 +5213,8 @@ public class Window extends JFrame {
     					}
     					if(!exists) {
     						TableNode add_node = new TableNode(i2, "");
-    						inf_materials.add(add_node);
+    						if(!add_node.toString().equals(""))
+    							inf_materials.add(add_node);
     					}
     				}
     			} catch(Exception aaa) {}

@@ -8,10 +8,13 @@ public class TableNode implements Comparable {
 
 	private Individual individual;
 	private String null_label;
+	private String name;
 	
 	public TableNode(Individual individual, String null_label) {
 		this.individual = individual;
 		this.null_label = null_label;
+		this.name = this.null_label;
+		try { this.name = individual.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm().trim(); } catch(Exception e) {}
 	}
 	
 	public Individual getIndividual() {
@@ -19,10 +22,7 @@ public class TableNode implements Comparable {
 	}
 	
 	public String toString() {
-		if(individual != null)
-			return individual.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm().trim();
-		else
-			return null_label;
+		return name;
 	}
 	
 	public int compareTo(Object a) {
