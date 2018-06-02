@@ -199,7 +199,7 @@ public class Window extends JFrame {
 	private static boolean crawl_go;
 	
 	// general
-	private static String version = "1.20.0";
+	private static String version = "1.23.0";
 	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM;
 	private static OntModel ontology;
 	private static OntModel demo_factory;
@@ -209,7 +209,7 @@ public class Window extends JFrame {
 	private static final String uri_MachineTool = "http://infoneer.txstate.edu/ontology/MSDL_0000070";
 	private static final String uri_3DPrinter = "http://infoneer.txstate.edu/ontology/MSDL_0000680";
 	private static final String uri_Industry = "http://infoneer.txstate.edu/ontology/MSDL_0000686";
-	private static final String uri_Material = "http://infoneer.txstate.edu/ontology/MSDL_0000003";
+	private static final String uri_Material = "http://infoneer.txstate.edu/ontology/MSDL_0000676";
 	private static final String uri_Software = "http://purl.obolibrary.org/obo/IAO_0000594";
 	private static final String uri_Skill = "http://infoneer.txstate.edu/ontology/MSDL_0001034";
 	private static OntClass class_MachineTool;
@@ -438,9 +438,8 @@ public class Window extends JFrame {
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000797"), class_Industry, ""));
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000794"), class_Industry, ""));
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000792"), class_Industry, ""));
-		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000834"), class_Material, ""));
-		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000819"), class_Material, ""));
-		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000829"), class_Material, ""));
+		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/steel_capability"), class_Material, ""));
+		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/Al_1000_series_capability"), class_Material, ""));
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000783"), class_Software, ""));
 		capability_individuals.add(new ListNode(ontology.getIndividual("http://infoneer.txstate.edu/ontology/MSDL_0000776"), class_Software, ""));
 		demo_factory = generateFinalExport(0, true, "", "", "", "", "", "", "", "", "", "", "", "", "", "", null);
@@ -4760,6 +4759,24 @@ public class Window extends JFrame {
 		int total_machines = equipment_individuals.size();
 		int max_feed_drives = 0;
 		
+		for(int i = 0; i < capability_individuals.size(); ++i) {
+			if(capability_individuals.get(i).getCategoryClass().equals(class_Material)) {
+				Individual mater = capability_individuals.get(i).getIndividual();
+				boolean exists = false;
+				for(int y = 0; y < exp_materials.size(); y++) {
+					if(exp_materials.get(y).getIndividual().getURI().equals(mater.getURI())) {
+						exists = true;
+						break;
+					}
+				}
+				if(!exists) {
+					TableNode add_node = new TableNode(mater, "");
+					if(!add_node.toString().equals(""))
+						exp_materials.add(add_node);
+				}
+			}
+		}
+		
 		float exp_min_tolerance = -1, exp_max_tolerance = -1, exp_min_length = -1, exp_max_length = -1, exp_min_diameter = -1, exp_max_diameter = -1, exp_min_roughness = -1, exp_max_roughness = -1, exp_min_thickness = -1, exp_max_thickness = -1, exp_max_weight = -1;
 		float inf_min_tolerance = -1, inf_max_tolerance = -1, inf_min_length = -1, inf_max_length = -1, inf_min_diameter = -1, inf_max_diameter = -1, inf_min_roughness = -1, inf_max_roughness = -1, inf_min_thickness = -1, inf_max_thickness = -1, inf_max_weight = -1;
 		for(int x = 0; x < equipment_individuals.size(); x++) {
@@ -6169,17 +6186,17 @@ public class Window extends JFrame {
 					    	result = JOptionPane.showOptionDialog(frame, save_panel, "Save Capability Model", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Save", "Cancel"}, null);
 				            switch(result) {
 				                case JOptionPane.OK_OPTION:
-				                	ArrayList<String> materials = new ArrayList<>();
+				                	ArrayList<IndividualWrapper> materials = new ArrayList<>();
 				                	for(int x = 0; x < exp_materials.size(); ++x)
-				                		materials.add(exp_materials.get(x).toString());
+				                		materials.add(new IndividualWrapper(exp_materials.get(x).getIndividual()));
 				                	for(int x = 0; x < inf_materials.size(); ++x)
-				                		materials.add(inf_materials.get(x).toString());
+				                		materials.add(new IndividualWrapper(inf_materials.get(x).getIndividual()));
 				                	
-				                	ArrayList<String> functions = new ArrayList<>();
+				                	ArrayList<IndividualWrapper> functions = new ArrayList<>();
 				                	for(int x = 0; x < exp_functions.size(); ++x)
-				                		functions.add(exp_functions.get(x).toString());
+				                		functions.add(new IndividualWrapper(exp_functions.get(x).getIndividual()));
 				                	for(int x = 0; x < inf_functions.size(); ++x)
-				                		functions.add(inf_functions.get(x).toString());
+				                		functions.add(new IndividualWrapper(inf_functions.get(x).getIndividual()));
 				                	
 									for(int x = 0; x < saved_match_data.size(); x++) {
 										if(saved_match_data.get(x).toString().equals(name_save.getText())) {
@@ -6187,7 +6204,7 @@ public class Window extends JFrame {
 											break;
 										}
 									}
-				                	saved_match_data.add(new MatchData(name_save.getText(), fin_inf_range, fin_inf_max_tolerance, fin_inf_max_length, fin_inf_max_diameter, fin_inf_max_roughness, fin_inf_max_thickness, fin_inf_max_weight, final_concepts, materials, functions));
+				                	saved_match_data.add(new MatchData(name_save.getText(), fin_inf_range, fin_inf_min_tolerance, fin_inf_max_tolerance, fin_inf_max_length, fin_inf_max_diameter, fin_inf_min_roughness, fin_inf_max_roughness, fin_inf_min_thickness, fin_inf_max_thickness, fin_inf_max_weight, final_concepts, materials, functions));
 				                    return;
 				                case JOptionPane.CANCEL_OPTION:
 				                    return;
@@ -6943,7 +6960,16 @@ public class Window extends JFrame {
 									OntDocumentManager model_dm = model.getDocumentManager();
 									model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
 									model.read(in, "RDF/XML");
-									setImportedInfo(model, 2);
+									setImportedInfo(model, 2);	
+									String name_save = work_order.getPartName() + " Work Order";
+									OntModel exp = generateFinalExport(2, false, "", "", "", "", "", "", "", "", "", "", "", "", "", "", work_order.getConcepts());
+									for(int x = 0; x < saved_work_orders.size(); x++) {
+										if(saved_work_orders.get(x).toString().equals(name_save)) {
+											saved_work_orders.remove(x);
+											x = saved_work_orders.size();
+										}
+									}
+				                	saved_work_orders.add(new OntModelWrapper(exp, name_save));
 								} catch(Exception e1) {
 									f = 1;
 									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
@@ -8467,26 +8493,29 @@ public class Window extends JFrame {
     		temp_work_cap = 1;
     	else if(work_order.getProductionVolume().equals("High"))
     		temp_work_cap = 2;
+    	
     	final int work_cap = temp_work_cap;
-    	double temp_work_tol = Integer.MAX_VALUE;
-    	try { temp_work_tol = Double.parseDouble(work_order.getUpperTolerance().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
-    	final double work_tol = temp_work_tol;
     	double temp_work_dia = Integer.MIN_VALUE;
     	try { temp_work_dia = Double.parseDouble(work_order.getMaxDiameter().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
     	final double work_dia = temp_work_dia;
     	double temp_work_len = Integer.MIN_VALUE;
     	try { temp_work_len = Double.parseDouble(work_order.getMaxLength().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
     	final double work_len = temp_work_len;
-    	double temp_work_sur = Integer.MAX_VALUE;
-    	try { temp_work_sur = Double.parseDouble(work_order.getSurfaceRoughness().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
-    	final double work_sur = temp_work_sur;
-    	double temp_work_thi = Integer.MAX_VALUE;
-    	try { temp_work_thi = Double.parseDouble(work_order.getMinWallThickness().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
-    	final double work_thi = temp_work_thi;
     	double temp_work_wei = Integer.MIN_VALUE;
     	try { temp_work_wei = Double.parseDouble(work_order.getPartWeight().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
     	final double work_wei = temp_work_wei;
-    	final String work_mat = work_order.getMaterialCapability().toString().toLowerCase();
+    	double temp_work_sur = Integer.MIN_VALUE;
+    	try { temp_work_sur = Double.parseDouble(work_order.getSurfaceRoughness().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
+    	final double work_sur = temp_work_sur;
+    	double temp_work_thi = Integer.MIN_VALUE;
+    	try { temp_work_thi = Double.parseDouble(work_order.getMinWallThickness().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
+    	final double work_thi = temp_work_thi;
+    	double temp_work_lo_tol = Integer.MAX_VALUE;
+    	try { temp_work_lo_tol = Double.parseDouble(work_order.getLowerTolerance().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
+    	final double work_lo_tol = temp_work_lo_tol;
+    	double temp_work_up_tol = Integer.MAX_VALUE;
+    	try { temp_work_up_tol = Double.parseDouble(work_order.getUpperTolerance().replaceAll("[^\\d.]", "")); } catch(Exception e) {}
+    	final double work_up_tol = temp_work_up_tol;
 		
 		JButton btnBuildSupplyChains = new JButton("Build Supply Chains");
 		btnBuildSupplyChains.setFont(new Font("Arial", Font.PLAIN, 15));
@@ -8527,12 +8556,15 @@ public class Window extends JFrame {
             		
             		ArrayList<MatchData> subset = available_subsets.get(x);
             		int md_cap = 0;
-            		double md_tol = Integer.MAX_VALUE;
                 	double md_dia = Integer.MIN_VALUE;
                 	double md_len = Integer.MIN_VALUE;
-                	double md_sur = Integer.MAX_VALUE;
-                	double md_thi = Integer.MAX_VALUE;
                 	double md_wei = Integer.MIN_VALUE;
+                	double md_lo_sur = Integer.MAX_VALUE;
+                	double md_up_sur = Integer.MIN_VALUE;
+                	double md_lo_thi = Integer.MAX_VALUE;
+                	double md_up_thi = Integer.MIN_VALUE;
+                	double md_lo_tol = Integer.MAX_VALUE;
+                	double md_up_tol = Integer.MAX_VALUE;
             		
             		for(int y = 0; y < subset.size(); ++y) {
             			MatchData md = subset.get(y);
@@ -8545,110 +8577,125 @@ public class Window extends JFrame {
             			if(temp_cap > md_cap)
             				md_cap = temp_cap;
             			
-            			// DEFAULT EMPTY FIELDS TO SUCCESS CASE
-            			
-            			try {
-            				double temp_tol = Double.parseDouble(md.getTolerance().replaceAll("[^\\d.]", ""));
-            				if(temp_tol < md_tol)
-            					md_tol = temp_tol;
-            			} catch(Exception e1) {
-            				md_tol = Integer.MIN_VALUE;
-            			}
-            			
             			try {
             				double temp_dia = Double.parseDouble(md.getDiameter().replaceAll("[^\\d.]", ""));
             				if(temp_dia > md_dia)
             					md_dia = temp_dia;
-            			} catch(Exception e1) {
-            				md_dia = Integer.MAX_VALUE;
-            			}
+            			} catch(Exception e1) {}
             			
             			try {
             				double temp_len = Double.parseDouble(md.getLength().replaceAll("[^\\d.]", ""));
             				if(temp_len > md_len)
             					md_len = temp_len;
-            			} catch(Exception e1) {
-            				md_len = Integer.MAX_VALUE;
-            			}
-            			
-            			try {
-            				double temp_sur = Double.parseDouble(md.getSurface().replaceAll("[^\\d.]", ""));
-            				if(temp_sur < md_sur)
-            					md_sur = temp_sur;
-            			} catch(Exception e1) {
-            				md_sur = Integer.MIN_VALUE;
-            			}
-            			
-            			try {
-            				double temp_thi = Double.parseDouble(md.getThickness().replaceAll("[^\\d.]", ""));
-            				if(temp_thi < md_thi)
-            					md_thi = temp_thi;
-            			} catch(Exception e1) {
-            				md_thi = Integer.MIN_VALUE;
-            			}
+            			} catch(Exception e1) {}
             			
             			try {
             				double temp_wei = Double.parseDouble(md.getWeight().replaceAll("[^\\d.]", ""));
             				if(temp_wei > md_wei)
             					md_wei = temp_wei;
+            			} catch(Exception e1) {}
+            			
+            			try {
+            				double temp_sur = Double.parseDouble(md.getLowerSurface().replaceAll("[^\\d.]", ""));
+            				if(temp_sur < md_lo_sur)
+            					md_lo_sur = temp_sur;
             			} catch(Exception e1) {
-            				md_wei = Integer.MAX_VALUE;
+            				md_lo_sur = Integer.MIN_VALUE;
             			}
+            			
+            			try {
+            				double temp_sur = Double.parseDouble(md.getUpperSurface().replaceAll("[^\\d.]", ""));
+            				if(temp_sur > md_up_sur)
+            					md_up_sur = temp_sur;
+            			} catch(Exception e1) {}
+            			
+            			try {
+            				double temp_thi = Double.parseDouble(md.getLowerThickness().replaceAll("[^\\d.]", ""));
+            				if(temp_thi < md_lo_thi)
+            					md_lo_thi = temp_thi;
+            			} catch(Exception e1) {
+            				md_lo_thi = Integer.MIN_VALUE;
+            			}
+            			
+            			try {
+            				double temp_thi = Double.parseDouble(md.getUpperThickness().replaceAll("[^\\d.]", ""));
+            				if(temp_thi > md_up_thi)
+            					md_up_thi = temp_thi;
+            			} catch(Exception e1) {}
+            			
+            			try {
+            				double temp_tol = Double.parseDouble(md.getLowerTolerance().replaceAll("[^\\d.]", ""));
+            				if(temp_tol < md_lo_tol)
+            					md_lo_tol = temp_tol;
+            			} catch(Exception e1) {}
+            			
+            			try {
+            				double temp_tol = Double.parseDouble(md.getUpperTolerance().replaceAll("[^\\d.]", ""));
+            				if(temp_tol < md_up_tol)
+            					md_up_tol = temp_tol;
+            			} catch(Exception e1) {}
             		}
-            		if(md_cap >= work_cap && md_tol <= work_tol && md_dia >= work_dia && md_len >= work_len && md_sur <= work_sur && md_thi <= work_thi && md_wei >= work_wei) {
-            			ArrayList<String> total_mat = new ArrayList<>();
-            			ArrayList<String> total_func = new ArrayList<>();
+            		
+            		if(md_cap >= work_cap && md_dia >= work_dia && md_len >= work_len && md_wei >= work_wei && md_lo_tol <= work_lo_tol && md_up_tol <= work_up_tol &&
+            				((md_lo_sur <= work_sur || work_sur == Integer.MIN_VALUE) && md_up_sur >= work_sur) &&
+            				((md_lo_thi <= work_thi || work_thi == Integer.MIN_VALUE) && md_up_thi >= work_thi)) {
+            			
             			ArrayList<String> total_conc = new ArrayList<>();
+            			boolean mat_matched = false;
+            			ArrayList<IndividualWrapper> req_func = work_order.getProcessCapabilities();
+            			OntClass mat_class = getOntClassOf(work_order.getMaterialCapability().getIndividual());
+            			
             			for(MatchData md : subset) {
-            				ArrayList<String> mat = md.getMaterials();
-            				ArrayList<String> func = md.getFunctions();
+            				ArrayList<IndividualWrapper> mat = md.getMaterials();
+            				ArrayList<IndividualWrapper> func = md.getFunctions();
             				ArrayList<String> conc = md.getConcepts();
-            				for(String s : mat)
-            					total_mat.add(s);
-            				for(String s : func)
-            					total_func.add(s);
+            				for(IndividualWrapper iw : mat) {
+            					if(isCategoryOf(mat_class, getOntClassOf(iw.getIndividual()), true)) {
+            						mat_matched = true;
+            						break;
+            					}
+            				}
+            				for(IndividualWrapper iw : func) {
+            					for(int z = 0; z < req_func.size(); ++z) {
+	            					if(isCategoryOf(getOntClassOf(req_func.get(z).getIndividual()), getOntClassOf(iw.getIndividual()), true)) {
+	            						req_func.remove(z);
+	            						z = -1;
+	            					}
+            					}
+            				}
             				for(String s : conc)
             					total_conc.add(s);
             			}
-            			if(total_mat.contains(work_mat)) {
-            				ArrayList<IndividualWrapper> req_func = work_order.getProcessCapabilities();
-                			boolean all_exist = true;
-                			for(IndividualWrapper iw : req_func) {
-                				if(!total_func.contains(iw.toString().toLowerCase())) {
-                					all_exist = false;
-                					break;
-                				}
-                			}
-                			if(all_exist) {
-                				String chain_text = subset.get(0).toString();
-                				for(int z = 1; z < subset.size(); ++z)
-                					chain_text += " + " + subset.get(z);
-                				ArrayList<String> req_conc = work_order.getConcepts();
-                				int concept_count = 0;
-                				for(String s : req_conc) {
-                					if(total_conc.contains(s.trim().toLowerCase()))
-                						++concept_count;
-                				}
-                				ArrayList<String> caps = new ArrayList<>();
-                				for(MatchData md : subset)
-                    				caps.add(md.toString().trim());
-                        		chains.add(new CustomRadioButton(chain_text, caps, concept_count, false, Color.WHITE));
-                        		available_subsets.remove(x--);
-                        		for(int z = x + 1; ; ++z) {
-                        			if(z >= available_subsets.size())
-                        				break;
-                        			ArrayList<MatchData> check_subset = available_subsets.get(z);
-                        			boolean contains_all = true;
-                        			for(MatchData md : subset) {
-                        				if(!check_subset.contains(md)) {
-                        					contains_all = false;
-                        					break;
-                        				}
-                        			}
-                        			if(contains_all)
-                        				available_subsets.remove(z--);
-                        		}
-                			}
+
+            			if(mat_matched && req_func.size() == 0) {
+            				String chain_text = subset.get(0).toString();
+            				for(int z = 1; z < subset.size(); ++z)
+            					chain_text += " + " + subset.get(z);
+            				ArrayList<String> req_conc = work_order.getConcepts();
+            				int concept_count = 0;
+            				for(String s : req_conc) {
+            					if(total_conc.contains(s.trim().toLowerCase()))
+            						++concept_count;
+            				}
+            				ArrayList<String> caps = new ArrayList<>();
+            				for(MatchData md : subset)
+                				caps.add(md.toString().trim());
+                    		chains.add(new CustomRadioButton(chain_text, caps, concept_count, false, Color.WHITE));
+                    		available_subsets.remove(x--);
+                    		for(int z = x + 1; ; ++z) {
+                    			if(z >= available_subsets.size())
+                    				break;
+                    			ArrayList<MatchData> check_subset = available_subsets.get(z);
+                    			boolean contains_all = true;
+                    			for(MatchData md : subset) {
+                    				if(!check_subset.contains(md)) {
+                    					contains_all = false;
+                    					break;
+                    				}
+                    			}
+                    			if(contains_all)
+                    				available_subsets.remove(z--);
+                    		}
             			}
             		}
             	}
