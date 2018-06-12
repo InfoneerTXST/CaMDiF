@@ -112,6 +112,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
+import javax.swing.DefaultListSelectionModel;
 import java.awt.FlowLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -132,12 +133,14 @@ public class Window extends JFrame {
 	// ---------- CURRENT PAGES ----------
 	// loadPage()
 	// menuPage()
-	// buildPage1()
 	// companyPage()
+	// listPage()
+	// buildPage1()
 	// buildPage2()
 	// analyzePage1()
 	// analyzePage2()
 	// analyzePage3()
+	// analyzePage4()
 	// matchPage1()
 	// matchPage2()
 	// matchPage3()
@@ -197,9 +200,10 @@ public class Window extends JFrame {
 	// flags
 	private static boolean loading;
 	private static boolean crawl_go;
+	private static int opt_flag = 0;
 	
 	// general
-	private static String version = "1.23.0";
+	private static String version = "1.25.0";
 	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM;
 	private static OntModel ontology;
 	private static OntModel demo_factory;
@@ -395,12 +399,18 @@ public class Window extends JFrame {
 		for(ExtendedIterator<OntClass> ei = ontology.listClasses(); ei.hasNext(); ) {
 			OntClass oc = ei.next();
 			if(isCategoryOf(oc, mat_cap, false)) {
-				for(ExtendedIterator<Individual> ei2 = ontology.listIndividuals(oc); ei2.hasNext(); )
-					mat_list.add(new IndividualWrapper(ei2.next()));
+				for(ExtendedIterator<Individual> ei2 = ontology.listIndividuals(oc); ei2.hasNext(); ) {
+					IndividualWrapper iw = new IndividualWrapper(ei2.next());
+					if(!iw.toString().isEmpty())
+						mat_list.add(iw);
+				}
 			}
 			else if(isCategoryOf(oc, proc_cap, false)) {
-				for(ExtendedIterator<Individual> ei2 = ontology.listIndividuals(oc); ei2.hasNext(); )
-					proc_list.add(new IndividualWrapper(ei2.next()));
+				for(ExtendedIterator<Individual> ei2 = ontology.listIndividuals(oc); ei2.hasNext(); ) {
+					IndividualWrapper iw = new IndividualWrapper(ei2.next());
+					if(!iw.toString().isEmpty())
+						proc_list.add(iw);
+				}
 			}
 		}
 
@@ -1806,9 +1816,9 @@ public class Window extends JFrame {
 		getContentPane().add(panel, BorderLayout.CENTER);
 		GridBagLayout gbl_panel = new GridBagLayout();
 		gbl_panel.columnWidths = new int[]{0, 0};
-		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0, 0};
+		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0};
 		gbl_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel.setLayout(gbl_panel);
 		
 		JButton btnBuild = new JButton("Build");
@@ -1816,7 +1826,7 @@ public class Window extends JFrame {
 		GridBagConstraints gbc_btnBuild = new GridBagConstraints();
 		gbc_btnBuild.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnBuild.weightx = 1.0;
-		gbc_btnBuild.insets = new Insets(125, 225, 10, 225);
+		gbc_btnBuild.insets = new Insets(105, 225, 10, 225);
 		gbc_btnBuild.gridx = 0;
 		gbc_btnBuild.gridy = 0;
 		panel.add(btnBuild, gbc_btnBuild);
@@ -1857,13 +1867,43 @@ public class Window extends JFrame {
             }
         });
 		
+		JButton btnList = new JButton("List Models");
+		btnList.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnList = new GridBagConstraints();
+		gbc_btnList.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnList.weightx = 1.0;
+		gbc_btnList.insets = new Insets(15, 225, 5, 225);
+		gbc_btnList.gridx = 0;
+		gbc_btnList.gridy = 3;
+		panel.add(btnList, gbc_btnList);
+		btnList.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                listPage();
+                return;
+            }
+        });
+		
+		JButton btnExit = new JButton("Exit");
+		btnExit.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnExit = new GridBagConstraints();
+		gbc_btnExit.insets = new Insets(40, 290, 10, 290);
+		gbc_btnExit.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnExit.gridx = 0;
+		gbc_btnExit.gridy = 4;
+		panel.add(btnExit, gbc_btnExit);
+		btnExit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+		
 		JButton btnAbout = new JButton("About");
 		btnAbout.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnAbout = new GridBagConstraints();
 		gbc_btnAbout.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnAbout.insets = new Insets(0, 225, 5, 225);
+		gbc_btnAbout.insets = new Insets(0, 290, 0, 290);
 		gbc_btnAbout.gridx = 0;
-		gbc_btnAbout.gridy = 3;
+		gbc_btnAbout.gridy = 5;
 		panel.add(btnAbout, gbc_btnAbout);
 		btnAbout.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -1874,19 +1914,13 @@ public class Window extends JFrame {
             }
         });
 		
-		JButton btnExit = new JButton("Exit");
-		btnExit.setFont(new Font("Arial", Font.PLAIN, 15));
-		GridBagConstraints gbc_btnExit = new GridBagConstraints();
-		gbc_btnExit.insets = new Insets(42, 290, 0, 290);
-		gbc_btnExit.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnExit.gridx = 0;
-		gbc_btnExit.gridy = 4;
-		panel.add(btnExit, gbc_btnExit);
-		btnExit.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
+		JLabel camdif_pic = new JLabel(new ImageIcon(getClass().getResource("/images/camdif.png")));
+		GridBagConstraints gbc_camdifPic = new GridBagConstraints();
+		gbc_camdifPic.fill = GridBagConstraints.HORIZONTAL;
+		gbc_camdifPic.insets = new Insets(-123, 18, 0, 0);
+		gbc_camdifPic.gridx = 0;
+		gbc_camdifPic.gridy = 6;
+		panel.add(camdif_pic, gbc_camdifPic);
 		
 		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
 		validate();
@@ -1913,7 +1947,7 @@ public class Window extends JFrame {
 		GridBagConstraints gbc_btnBuildNewFactory = new GridBagConstraints();
 		gbc_btnBuildNewFactory.weightx = 1.0;
 		gbc_btnBuildNewFactory.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnBuildNewFactory.insets = new Insets(125, 225, 10, 225);
+		gbc_btnBuildNewFactory.insets = new Insets(105, 225, 10, 225);
 		gbc_btnBuildNewFactory.gridx = 0;
 		gbc_btnBuildNewFactory.gridy = 0;
 		panel.add(btnBuildNewFactory, gbc_btnBuildNewFactory);
@@ -2104,6 +2138,14 @@ public class Window extends JFrame {
                 return;
             }
         });
+		
+		JLabel build_pic = new JLabel(new ImageIcon(getClass().getResource("/images/build.png")));
+		GridBagConstraints gbc_buildPic = new GridBagConstraints();
+		gbc_buildPic.fill = GridBagConstraints.HORIZONTAL;
+		gbc_buildPic.insets = new Insets(-60, 0, 0, 0);
+		gbc_buildPic.gridx = 0;
+		gbc_buildPic.gridy = 4;
+		panel.add(build_pic, gbc_buildPic);
 		
 		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
 		validate();
@@ -2719,6 +2761,9 @@ public class Window extends JFrame {
 	private void buildPage2(boolean first_page) {
 		getContentPane().removeAll();
 		
+		DefaultListModel<ListNode> list_model_1 = new DefaultListModel<ListNode>();
+		JList<ListNode> list_1 = new JList<ListNode>(list_model_1);
+		
 		list_model = new DefaultListModel<ListNode>();
 		list = new JList<ListNode>(list_model);
 		list.setFont(new Font("Arial", Font.PLAIN, 12));
@@ -2726,11 +2771,16 @@ public class Window extends JFrame {
 		list.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent ev) {
 				ListNode selection = list.getSelectedValue();
+				int selection_index = list.getSelectedIndex();
 				if(selection == null)
 					return;
 				String s = selection.toString();
 				if(s.equals("\n") || s.equals(s_3d) || s.equals(s_machine) || s.equals(s_material) || s.equals(s_skill) || s.equals(s_industry) || s.equals(s_software))
 					list.clearSelection();
+				else {
+			    	list_1.clearSelection();
+			    	list.setSelectedIndex(selection_index);
+				}
 			}
 		});
 		
@@ -3118,13 +3168,16 @@ public class Window extends JFrame {
 		scrollPane_2.setViewportView(panel_23);
 		panel_23.setLayout(new BorderLayout(0, 0));
 		
-		DefaultListModel<ListNode> list_model_1 = new DefaultListModel<ListNode>();
-		JList<ListNode> list_1 = new JList<ListNode>(list_model_1);
 		list_1.setFont(new Font("Arial", Font.PLAIN, 12));
 		list_1.setFocusable(false);
 		list_1.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		panel_23.add(list_1, BorderLayout.CENTER);
 		panel_21.setLayout(gl_panel_21);
+		list_1.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent ev) {
+				list.clearSelection();
+			}
+		});
 		
 		refreshList(first_page, null);
 		
@@ -3391,620 +3444,624 @@ public class Window extends JFrame {
 		panel_2.add(panel_24, gbc_panel_24);
 		panel_24.setLayout(new GridLayout(0, 1, 0, 0));
 		
-		JButton btnInfo = new JButton("Info");
-		btnInfo.setFont(new Font("Arial", Font.PLAIN, 15));
-		btnInfo.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-				EventQueue.invokeLater(new Runnable() {
-				    @Override
-				    public void run() {
-				    	ListNode ln = list_1.getSelectedValue();
-				    	if(ln != null && (combo_class.getURI().equals(uri_MachineTool) || combo_class.getURI().equals(uri_3DPrinter))) {
-					    	JPanel info_panel = new JPanel();
-							GridBagLayout gbl_info_panel = new GridBagLayout();
-							gbl_info_panel.columnWidths = new int[]{160, 0};
-							gbl_info_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-							gbl_info_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
-							info_panel.setLayout(gbl_info_panel); 
-							
-							JPanel message_panel = new JPanel(new FlowLayout(FlowLayout.LEADING,0, 0));
-							GridBagConstraints gbc_message_info = new GridBagConstraints();
-							gbc_message_info.insets = new Insets(1, 0, 5, 0);
-							gbc_message_info.fill = GridBagConstraints.BOTH;
-							gbc_message_info.gridx = 0;
-							gbc_message_info.gridy = 0;
-							
-							JPanel message_panel2 = new JPanel(new FlowLayout(FlowLayout.LEADING,0, 0));
-							GridBagConstraints gbc_message_info2 = new GridBagConstraints();
-							gbc_message_info2.insets = new Insets(1, 0, 5, 0);
-							gbc_message_info2.fill = GridBagConstraints.BOTH;
-							gbc_message_info2.gridx = 1;
-							gbc_message_info2.gridy = 0;
-							
-							JLabel message_info = new JLabel();
-							JLabel message_info2 = new JLabel();
-							String s = combo_class.getURI();
-							
-							// CAREFUL NOT TO REORDER ELEMENTS IN COLUMNS
-							
-							String val1 = "-", val2 = "-", val3 = "-", val4 = "-", val5 = "-", val6 = "-", val7 = "-",
-									val8 = "-", val9 = "-", val10 = "-", val11 = "-", val12 = "-", val13 = "-", val14 = "-",
-									val15 = "-", val16 = "-", val17 = "-", val18 = "-", val19 = "-", val20 = "-", val21 = "-",
-									val22 = "-", val23 = "-", val24 = "-", val25 = "-", val26 = "-", val27 = "-", val28 = "-",
-									val29 = "-", val30 = "-";
-							
-							Individual selected_indiv = ln.getIndividual();
-							
-							if(s.equals(uri_MachineTool)) { // Machine Tool
-								try { // manufacturer
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasManufacturer); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										val1 = i1.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
-										break;
-									}
-								} catch(Exception e) { val1 = "-"; }
+		if(first_page) {
+			JButton btnInfo = new JButton("Info");
+			btnInfo.setFont(new Font("Arial", Font.PLAIN, 15));
+			btnInfo.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					
+					EventQueue.invokeLater(new Runnable() {
+					    @Override
+					    public void run() {
+					    	ListNode ln = list_1.getSelectedValue();
+					    	if(ln == null)
+					    		ln = list.getSelectedValue();
+					    	if(ln != null && (ln.getCategoryClass().getURI().equals(uri_MachineTool) || ln.getCategoryClass().getURI().equals(uri_3DPrinter))) {
+						    	JPanel info_panel = new JPanel();
+								GridBagLayout gbl_info_panel = new GridBagLayout();
+								gbl_info_panel.columnWidths = new int[]{160, 0};
+								gbl_info_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+								gbl_info_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+								info_panel.setLayout(gbl_info_panel); 
 								
-								try { // table length
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000184")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val2 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val2.indexOf("^") != -1)
-												val2 = val2.substring(0, val2.indexOf("^"));
-											val2 += " in";
+								JPanel message_panel = new JPanel(new FlowLayout(FlowLayout.LEADING,0, 0));
+								GridBagConstraints gbc_message_info = new GridBagConstraints();
+								gbc_message_info.insets = new Insets(1, 0, 5, 0);
+								gbc_message_info.fill = GridBagConstraints.BOTH;
+								gbc_message_info.gridx = 0;
+								gbc_message_info.gridy = 0;
+								
+								JPanel message_panel2 = new JPanel(new FlowLayout(FlowLayout.LEADING,0, 0));
+								GridBagConstraints gbc_message_info2 = new GridBagConstraints();
+								gbc_message_info2.insets = new Insets(1, 0, 5, 0);
+								gbc_message_info2.fill = GridBagConstraints.BOTH;
+								gbc_message_info2.gridx = 1;
+								gbc_message_info2.gridy = 0;
+								
+								JLabel message_info = new JLabel();
+								JLabel message_info2 = new JLabel();
+								String s = ln.getCategoryClass().getURI();
+								
+								// CAREFUL NOT TO REORDER ELEMENTS IN COLUMNS
+								
+								String val1 = "-", val2 = "-", val3 = "-", val4 = "-", val5 = "-", val6 = "-", val7 = "-",
+										val8 = "-", val9 = "-", val10 = "-", val11 = "-", val12 = "-", val13 = "-", val14 = "-",
+										val15 = "-", val16 = "-", val17 = "-", val18 = "-", val19 = "-", val20 = "-", val21 = "-",
+										val22 = "-", val23 = "-", val24 = "-", val25 = "-", val26 = "-", val27 = "-", val28 = "-",
+										val29 = "-", val30 = "-";
+								
+								Individual selected_indiv = ln.getIndividual();
+								
+								if(s.equals(uri_MachineTool)) { // Machine Tool
+									try { // manufacturer
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasManufacturer); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											val1 = i1.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
 											break;
 										}
-									}
-								} catch(Exception e) { val2 = "-"; }
+									} catch(Exception e) { val1 = "-"; }
 									
-								try { // table width
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000185")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val3 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val3.indexOf("^") != -1)
-												val3 = val3.substring(0, val3.indexOf("^"));
-											val3 += " in";
-											break;
+									try { // table length
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000184")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val2 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val2.indexOf("^") != -1)
+													val2 = val2.substring(0, val2.indexOf("^"));
+												val2 += " in";
+												break;
+											}
 										}
-									}
-								} catch(Exception e) { val3 = "-"; }
-								
-								try { // max load capacity
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000186")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val4 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val4.indexOf("^") != -1)
-												val4 = val4.substring(0, val4.indexOf("^"));
-											val4 += " lb";
-											break;
+									} catch(Exception e) { val2 = "-"; }
+										
+									try { // table width
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000185")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val3 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val3.indexOf("^") != -1)
+													val3 = val3.substring(0, val3.indexOf("^"));
+												val3 += " in";
+												break;
+											}
 										}
-									}
-								} catch(Exception e) { val4 = "-"; }
-								
-								try { // max spindle speed
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000183")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val5 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val5.indexOf("^") != -1)
-												val5 = val5.substring(0, val5.indexOf("^"));
-											val5 += " rpm";
-											break;
-										}
-									}
-								} catch(Exception e) { val5 = "-"; }
-								
-								try { // spindle power
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000182")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val6 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val6.indexOf("^") != -1)
-												val6 = val6.substring(0, val6.indexOf("^"));
-											val6 += " hp";
-											break;
-										}
-									}
-								} catch(Exception e) { val6 = "-"; }
-								
-								try { // spindle torque
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000181")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val7 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val7.indexOf("^") != -1)
-												val7 = val7.substring(0, val7.indexOf("^"));
-											val7 += " ft-lb";
-											break;
-										}
-									}
-								} catch(Exception e) { val7 = "-"; }
-
-								try { // rapid traverse X
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val8 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val8.indexOf("^") != -1)
-												val8 = val8.substring(0, val8.indexOf("^"));
-											val8 += " in/min";
-											break;
-										}
-									}
-								} catch(Exception e) { val8 = "-"; }
+									} catch(Exception e) { val3 = "-"; }
 									
-								try { // rapid traverse Y
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val9 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val9.indexOf("^") != -1)
-												val9 = val9.substring(0, val9.indexOf("^"));
-											val9 += " in/min";
-											break;
+									try { // max load capacity
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000084"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000186")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val4 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val4.indexOf("^") != -1)
+													val4 = val4.substring(0, val4.indexOf("^"));
+												val4 += " lb";
+												break;
+											}
 										}
-									}
-								} catch(Exception e) { val9 = "-"; }
-								
-								try { // rapid traverse Z
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val10 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val10.indexOf("^") != -1)
-												val10 = val10.substring(0, val10.indexOf("^"));
-											val10 += " in/min";
-											break;
-										}
-									}
-								} catch(Exception e) { val10 = "-"; }
-								
-								try { // cutting feed rate X
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val11 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val11.indexOf("^") != -1)
-												val11 = val11.substring(0, val11.indexOf("^"));
-											val11 += " in/min";
-											break;
-										}
-									}
-								} catch(Exception e) { val11 = "-"; }
-								
-								try { // cutting feed rate Y
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val12 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val12.indexOf("^") != -1)
-												val12 = val12.substring(0, val12.indexOf("^"));
-											val12 += " in/min";
-											break;
-										}
-									}
-								} catch(Exception e) { val12 = "-"; }
-								
-								try { // cutting feed rate Z
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val13 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val13.indexOf("^") != -1)
-												val13 = val13.substring(0, val13.indexOf("^"));
-											val13 += " in/min";
-											break;
-										}
-									}
-								} catch(Exception e) { val13 = "-"; }
-								
-								try { // travel X
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val14 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val14.indexOf("^") != -1)
-												val14 = val14.substring(0, val14.indexOf("^"));
-											val14 += " in";
-											break;
-										}
-									}
-								} catch(Exception e) { val14 = "-"; }
-								
-								try { // travel Y
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val15 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val15.indexOf("^") != -1)
-												val15 = val15.substring(0, val15.indexOf("^"));
-											val15 += " in";
-											break;
-										}
-									}
-								} catch(Exception e) { val15 = "-"; }
-								
-								try { // travel Z
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val16 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val16.indexOf("^") != -1)
-												val16 = val16.substring(0, val16.indexOf("^"));
-											val16 += " in";
-											break;
-										}
-									}
-								} catch(Exception e) { val16 = "-"; }
-								
-								try { // max num of tools
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000193")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val17 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val17.indexOf("^") != -1)
-												val17 = val17.substring(0, val17.indexOf("^"));
-											break;
-										}
-									}
-								} catch(Exception e) { val17 = "-"; }
-								
-								try { // tool to tool time
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000192")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val18 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val18.indexOf("^") != -1)
-												val18 = val18.substring(0, val18.indexOf("^"));
-											val18 += " sec";
-											break;
-										}
-									}
-								} catch(Exception e) { val18 = "-"; }
-								
-								try { // chip to chip time
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000191")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val19 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val19.indexOf("^") != -1)
-												val19 = val19.substring(0, val19.indexOf("^"));
-											val19 += " sec";
-											break;
-										}
-									}
-								} catch(Exception e) { val19 = "-"; }
-								
-								try { // max tool length
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000189")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val20 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val20.indexOf("^") != -1)
-												val20 = val20.substring(0, val20.indexOf("^"));
-											val20 += " in";
-											break;
-										}
-									}
-								} catch(Exception e) { val20 = "-"; }
-
-								try { // max tool weight
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000190")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val21 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val21.indexOf("^") != -1)
-												val21 = val21.substring(0, val21.indexOf("^"));
-											val21 += " lb";
-											break;
-										}
-									}
-								} catch(Exception e) { val21 = "-"; }
-								
-								try { // travel angle A
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val22 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val22.indexOf("^") != -1)
-												val22 = val22.substring(0, val22.indexOf("^"));
-											val22 += " deg";
-											break;
-										}
-									}
-								} catch(Exception e) { val22 = "-"; }
-								
-								try { // travel angle B
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val23 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val23.indexOf("^") != -1)
-												val23 = val23.substring(0, val23.indexOf("^"));
-											val23 += " deg";
-											break;
-										}
-									}
-								} catch(Exception e) { val23 = "-"; }
-								
-								try { // travel angle C
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val24 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val24.indexOf("^") != -1)
-												val24 = val24.substring(0, val24.indexOf("^"));
-											val24 += " deg";
-											break;
-										}
-									}
-								} catch(Exception e) { val24 = "-"; }
-								
-								try { // cutting feed rate A
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val25 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val25.indexOf("^") != -1)
-												val25 = val25.substring(0, val25.indexOf("^"));
-											val25 += " deg/sec";
-											break;
-										}
-									}
-								} catch(Exception e) { val25 = "-"; }
-								
-								try { // cutting feed rate B
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val26 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val26.indexOf("^") != -1)
-												val26 = val26.substring(0, val26.indexOf("^"));
-											val26 += " deg/sec";
-											break;
-										}
-									}
-								} catch(Exception e) { val26 = "-"; }
-								
-								try { // cutting feed rate C
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val27 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val27.indexOf("^") != -1)
-												val27 = val27.substring(0, val27.indexOf("^"));
-											val27 += " deg/sec";
-											break;
-										}
-									}
-								} catch(Exception e) { val27 = "-"; }
-								
-								try { // max torque A
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val28 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val28.indexOf("^") != -1)
-												val28 = val28.substring(0, val28.indexOf("^"));
-											val28 += " ft-lb";
-											break;
-										}
-									}
-								} catch(Exception e) { val28 = "-"; }
-								
-								try { // max torque B
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val29 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val29.indexOf("^") != -1)
-												val29 = val29.substring(0, val29.indexOf("^"));
-											val29 += " ft-lb";
-											break;
-										}
-									}
-								} catch(Exception e) { val29 = "-"; }
-								
-								try { // max torque C
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val30 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val30.indexOf("^") != -1)
-												val30 = val30.substring(0, val30.indexOf("^"));
-											val30 += " ft-lb";
-											break;
-										}
-									}
-								} catch(Exception e) { val30 = "-"; }
-								
-								message_info = new JLabel("<html><body>"
-										+ "<p style=\"margin-bottom:-12\"><b>Property</b></p>"
-										+ "<br><p style=\"margin-bottom:-12\">manufacturer</p>"
-										+ "<br><p style=\"margin-bottom:-12\">table length</p>"
-										+ "<br><p style=\"margin-bottom:-12\">table width</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max load capacity</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max spindle speed</p>"
-										+ "<br><p style=\"margin-bottom:-12\">spindle power</p>"
-										+ "<br><p style=\"margin-bottom:-12\">spindle torque</p>"
-										+ "<br><p style=\"margin-bottom:-12\">rapid traverse X</p>"
-										+ "<br><p style=\"margin-bottom:-12\">rapid traverse Y</p>"
-										+ "<br><p style=\"margin-bottom:-12\">rapid traverse Z</p>"
-										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate X</p>"
-										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate Y</p>"
-										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate Z</p>"
-										+ "<br><p style=\"margin-bottom:-12\">travel X</p>"
-										+ "<br><p style=\"margin-bottom:-12\">travel Y</p>"
-										+ "<br><p style=\"margin-bottom:-12\">travel Z</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max num of tools</p>"
-										+ "<br><p style=\"margin-bottom:-12\">tool to tool time</p>"
-										+ "<br><p style=\"margin-bottom:-12\">chip to chip time</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max tool length</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max tool weight</p>"
-										+ "<br><p style=\"margin-bottom:-12\">travel angle A</p>"
-										+ "<br><p style=\"margin-bottom:-12\">travel angle B</p>"
-										+ "<br><p style=\"margin-bottom:-12\">travel angle C</p>"
-										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate A</p>"
-										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate B</p>"
-										+ "<br><p style=\"margin-bottom:-12\">cutting feed rate C</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max torque A</p>"
-										+ "<br><p style=\"margin-bottom:-12\">max torque B</p>"
-										+ "<br>max torque C"
-										+ "</body></html>", SwingConstants.LEFT);
-								
-								message_info2 = new JLabel("<html><body>"
-										+ "<p style=\"margin-bottom:-12\"><b>Value</b></p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val1 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val2 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val3 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val4 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val5 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val6 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val7 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val8 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val9 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val10 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val11 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val12 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val13 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val14 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val15 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val16 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val17 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val18 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val19 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val20 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val21 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val22 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val23 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val24 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val25 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val26 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val27 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val28 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val29 + "</p>"
-										+ "<br>" + val30
-										+ "</body></html>", SwingConstants.LEFT);
-							}
-							else if(s.equals(uri_3DPrinter)) {
-								try { // manufacturer
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasManufacturer); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										val1 = i1.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
-										break;
-									}
-								} catch(Exception e) { val1 = "-"; }
-								
-								try { // build volume length
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasBuildVolume); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000708"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000728")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val2 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val2.indexOf("^") != -1)
-												val2 = val2.substring(0, val2.indexOf("^"));
-											val2 += " in";
-											break;
-										}
-									}
-								} catch(Exception e) { val2 = "-"; }
+									} catch(Exception e) { val4 = "-"; }
 									
-								try { // build volume width
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasBuildVolume); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000708"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000729")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val3 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val3.indexOf("^") != -1)
-												val3 = val3.substring(0, val3.indexOf("^"));
-											val3 += " in";
+									try { // max spindle speed
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000183")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val5 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val5.indexOf("^") != -1)
+													val5 = val5.substring(0, val5.indexOf("^"));
+												val5 += " rpm";
+												break;
+											}
+										}
+									} catch(Exception e) { val5 = "-"; }
+									
+									try { // spindle power
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000182")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val6 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val6.indexOf("^") != -1)
+													val6 = val6.substring(0, val6.indexOf("^"));
+												val6 += " hp";
+												break;
+											}
+										}
+									} catch(Exception e) { val6 = "-"; }
+									
+									try { // spindle torque
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000120"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000181")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val7 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val7.indexOf("^") != -1)
+													val7 = val7.substring(0, val7.indexOf("^"));
+												val7 += " ft-lb";
+												break;
+											}
+										}
+									} catch(Exception e) { val7 = "-"; }
+	
+									try { // rapid traverse X
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val8 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val8.indexOf("^") != -1)
+													val8 = val8.substring(0, val8.indexOf("^"));
+												val8 += " in/min";
+												break;
+											}
+										}
+									} catch(Exception e) { val8 = "-"; }
+										
+									try { // rapid traverse Y
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val9 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val9.indexOf("^") != -1)
+													val9 = val9.substring(0, val9.indexOf("^"));
+												val9 += " in/min";
+												break;
+											}
+										}
+									} catch(Exception e) { val9 = "-"; }
+									
+									try { // rapid traverse Z
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000205")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val10 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val10.indexOf("^") != -1)
+													val10 = val10.substring(0, val10.indexOf("^"));
+												val10 += " in/min";
+												break;
+											}
+										}
+									} catch(Exception e) { val10 = "-"; }
+									
+									try { // cutting feed rate X
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val11 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val11.indexOf("^") != -1)
+													val11 = val11.substring(0, val11.indexOf("^"));
+												val11 += " in/min";
+												break;
+											}
+										}
+									} catch(Exception e) { val11 = "-"; }
+									
+									try { // cutting feed rate Y
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val12 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val12.indexOf("^") != -1)
+													val12 = val12.substring(0, val12.indexOf("^"));
+												val12 += " in/min";
+												break;
+											}
+										}
+									} catch(Exception e) { val12 = "-"; }
+									
+									try { // cutting feed rate Z
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000200")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val13 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val13.indexOf("^") != -1)
+													val13 = val13.substring(0, val13.indexOf("^"));
+												val13 += " in/min";
+												break;
+											}
+										}
+									} catch(Exception e) { val13 = "-"; }
+									
+									try { // travel X
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000156"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val14 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val14.indexOf("^") != -1)
+													val14 = val14.substring(0, val14.indexOf("^"));
+												val14 += " in";
+												break;
+											}
+										}
+									} catch(Exception e) { val14 = "-"; }
+									
+									try { // travel Y
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000157"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val15 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val15.indexOf("^") != -1)
+													val15 = val15.substring(0, val15.indexOf("^"));
+												val15 += " in";
+												break;
+											}
+										}
+									} catch(Exception e) { val15 = "-"; }
+									
+									try { // travel Z
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000158"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000199")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val16 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val16.indexOf("^") != -1)
+													val16 = val16.substring(0, val16.indexOf("^"));
+												val16 += " in";
+												break;
+											}
+										}
+									} catch(Exception e) { val16 = "-"; }
+									
+									try { // max num of tools
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000193")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val17 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val17.indexOf("^") != -1)
+													val17 = val17.substring(0, val17.indexOf("^"));
+												break;
+											}
+										}
+									} catch(Exception e) { val17 = "-"; }
+									
+									try { // tool to tool time
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000192")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val18 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val18.indexOf("^") != -1)
+													val18 = val18.substring(0, val18.indexOf("^"));
+												val18 += " sec";
+												break;
+											}
+										}
+									} catch(Exception e) { val18 = "-"; }
+									
+									try { // chip to chip time
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000191")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val19 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val19.indexOf("^") != -1)
+													val19 = val19.substring(0, val19.indexOf("^"));
+												val19 += " sec";
+												break;
+											}
+										}
+									} catch(Exception e) { val19 = "-"; }
+									
+									try { // max tool length
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000189")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val20 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val20.indexOf("^") != -1)
+													val20 = val20.substring(0, val20.indexOf("^"));
+												val20 += " in";
+												break;
+											}
+										}
+									} catch(Exception e) { val20 = "-"; }
+	
+									try { // max tool weight
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000195"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000190")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val21 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val21.indexOf("^") != -1)
+													val21 = val21.substring(0, val21.indexOf("^"));
+												val21 += " lb";
+												break;
+											}
+										}
+									} catch(Exception e) { val21 = "-"; }
+									
+									try { // travel angle A
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val22 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val22.indexOf("^") != -1)
+													val22 = val22.substring(0, val22.indexOf("^"));
+												val22 += " deg";
+												break;
+											}
+										}
+									} catch(Exception e) { val22 = "-"; }
+									
+									try { // travel angle B
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val23 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val23.indexOf("^") != -1)
+													val23 = val23.substring(0, val23.indexOf("^"));
+												val23 += " deg";
+												break;
+											}
+										}
+									} catch(Exception e) { val23 = "-"; }
+									
+									try { // travel angle C
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001021")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val24 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val24.indexOf("^") != -1)
+													val24 = val24.substring(0, val24.indexOf("^"));
+												val24 += " deg";
+												break;
+											}
+										}
+									} catch(Exception e) { val24 = "-"; }
+									
+									try { // cutting feed rate A
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val25 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val25.indexOf("^") != -1)
+													val25 = val25.substring(0, val25.indexOf("^"));
+												val25 += " deg/sec";
+												break;
+											}
+										}
+									} catch(Exception e) { val25 = "-"; }
+									
+									try { // cutting feed rate B
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val26 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val26.indexOf("^") != -1)
+													val26 = val26.substring(0, val26.indexOf("^"));
+												val26 += " deg/sec";
+												break;
+											}
+										}
+									} catch(Exception e) { val26 = "-"; }
+									
+									try { // cutting feed rate C
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001030")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val27 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val27.indexOf("^") != -1)
+													val27 = val27.substring(0, val27.indexOf("^"));
+												val27 += " deg/sec";
+												break;
+											}
+										}
+									} catch(Exception e) { val27 = "-"; }
+									
+									try { // max torque A
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000159"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val28 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val28.indexOf("^") != -1)
+													val28 = val28.substring(0, val28.indexOf("^"));
+												val28 += " ft-lb";
+												break;
+											}
+										}
+									} catch(Exception e) { val28 = "-"; }
+									
+									try { // max torque B
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000160"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val29 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val29.indexOf("^") != -1)
+													val29 = val29.substring(0, val29.indexOf("^"));
+												val29 += " ft-lb";
+												break;
+											}
+										}
+									} catch(Exception e) { val29 = "-"; }
+									
+									try { // max torque C
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasMachinePart); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0001024"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0001029")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val30 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val30.indexOf("^") != -1)
+													val30 = val30.substring(0, val30.indexOf("^"));
+												val30 += " ft-lb";
+												break;
+											}
+										}
+									} catch(Exception e) { val30 = "-"; }
+									
+									message_info = new JLabel("<html><body>"
+											+ "<p style=\"margin-bottom:-12\"><b>Property</b></p>"
+											+ "<br><p style=\"margin-bottom:-12\">manufacturer</p>"
+											+ "<br><p style=\"margin-bottom:-12\">table length</p>"
+											+ "<br><p style=\"margin-bottom:-12\">table width</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max load capacity</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max spindle speed</p>"
+											+ "<br><p style=\"margin-bottom:-12\">spindle power</p>"
+											+ "<br><p style=\"margin-bottom:-12\">spindle torque</p>"
+											+ "<br><p style=\"margin-bottom:-12\">rapid traverse X</p>"
+											+ "<br><p style=\"margin-bottom:-12\">rapid traverse Y</p>"
+											+ "<br><p style=\"margin-bottom:-12\">rapid traverse Z</p>"
+											+ "<br><p style=\"margin-bottom:-12\">cutting feed rate X</p>"
+											+ "<br><p style=\"margin-bottom:-12\">cutting feed rate Y</p>"
+											+ "<br><p style=\"margin-bottom:-12\">cutting feed rate Z</p>"
+											+ "<br><p style=\"margin-bottom:-12\">travel X</p>"
+											+ "<br><p style=\"margin-bottom:-12\">travel Y</p>"
+											+ "<br><p style=\"margin-bottom:-12\">travel Z</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max num of tools</p>"
+											+ "<br><p style=\"margin-bottom:-12\">tool to tool time</p>"
+											+ "<br><p style=\"margin-bottom:-12\">chip to chip time</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max tool length</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max tool weight</p>"
+											+ "<br><p style=\"margin-bottom:-12\">travel angle A</p>"
+											+ "<br><p style=\"margin-bottom:-12\">travel angle B</p>"
+											+ "<br><p style=\"margin-bottom:-12\">travel angle C</p>"
+											+ "<br><p style=\"margin-bottom:-12\">cutting feed rate A</p>"
+											+ "<br><p style=\"margin-bottom:-12\">cutting feed rate B</p>"
+											+ "<br><p style=\"margin-bottom:-12\">cutting feed rate C</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max torque A</p>"
+											+ "<br><p style=\"margin-bottom:-12\">max torque B</p>"
+											+ "<br>max torque C"
+											+ "</body></html>", SwingConstants.LEFT);
+									
+									message_info2 = new JLabel("<html><body>"
+											+ "<p style=\"margin-bottom:-12\"><b>Value</b></p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val1 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val2 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val3 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val4 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val5 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val6 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val7 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val8 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val9 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val10 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val11 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val12 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val13 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val14 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val15 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val16 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val17 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val18 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val19 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val20 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val21 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val22 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val23 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val24 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val25 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val26 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val27 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val28 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val29 + "</p>"
+											+ "<br>" + val30
+											+ "</body></html>", SwingConstants.LEFT);
+								}
+								else if(s.equals(uri_3DPrinter)) {
+									try { // manufacturer
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasManufacturer); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											val1 = i1.listPropertyValues(RDFS.label).next().asLiteral().getLexicalForm();
 											break;
 										}
-									}
-								} catch(Exception e) { val3 = "-"; }
-								
-								try { // build volume height
-									for(StmtIterator si = selected_indiv.listProperties(prop_hasBuildVolume); si.hasNext(); ) {
-										Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
-										if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000708"))) {
-											Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000730")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
-											val4 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
-											if(val4.indexOf("^") != -1)
-												val4 = val4.substring(0, val4.indexOf("^"));
-											val4 += " in";
-											break;
+									} catch(Exception e) { val1 = "-"; }
+									
+									try { // build volume length
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasBuildVolume); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000708"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000728")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val2 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val2.indexOf("^") != -1)
+													val2 = val2.substring(0, val2.indexOf("^"));
+												val2 += " in";
+												break;
+											}
 										}
-									}
-								} catch(Exception e) { val4 = "-"; }
+									} catch(Exception e) { val2 = "-"; }
+										
+									try { // build volume width
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasBuildVolume); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000708"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000729")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val3 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val3.indexOf("^") != -1)
+													val3 = val3.substring(0, val3.indexOf("^"));
+												val3 += " in";
+												break;
+											}
+										}
+									} catch(Exception e) { val3 = "-"; }
+									
+									try { // build volume height
+										for(StmtIterator si = selected_indiv.listProperties(prop_hasBuildVolume); si.hasNext(); ) {
+											Individual i1 = ontology.getIndividual(si.next().getObject().asResource().getURI());
+											if(getOntClassOf(i1).equals(ontology.getOntClass("http://infoneer.txstate.edu/ontology/MSDL_0000708"))) {
+												Individual MD = ontology.getIndividual(ontology.getIndividual(i1.getProperty(ontology.getProperty("http://infoneer.txstate.edu/ontology/MSDL_0000730")).getObject().asResource().getURI()).getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000417")).getObject().asResource().getURI());
+												val4 = MD.getProperty(ontology.getProperty("http://purl.obolibrary.org/obo/IAO_0000004")).getObject().toString();
+												if(val4.indexOf("^") != -1)
+													val4 = val4.substring(0, val4.indexOf("^"));
+												val4 += " in";
+												break;
+											}
+										}
+									} catch(Exception e) { val4 = "-"; }
+									
+									message_info = new JLabel("<html><body>"
+											+ "<p style=\"margin-bottom:-12\"><b>Property</b></p>"
+											+ "<br><p style=\"margin-bottom:-12\">manufacturer</p>"
+											+ "<br><p style=\"margin-bottom:-12\">build volume length</p>"
+											+ "<br><p style=\"margin-bottom:-12\">build volume width</p>"
+											+ "<br>build volume height"
+											+ "</body></html>", SwingConstants.LEFT);
+									
+									message_info2 = new JLabel("<html><body>"
+											+ "<p style=\"margin-bottom:-12\"><b>Value</b></p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val1 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val2 + "</p>"
+											+ "<br><p style=\"margin-bottom:-12\">" + val3 + "</p>"
+											+ "<br>" + val4
+											+ "</body></html>", SwingConstants.LEFT);
+								}
 								
-								message_info = new JLabel("<html><body>"
-										+ "<p style=\"margin-bottom:-12\"><b>Property</b></p>"
-										+ "<br><p style=\"margin-bottom:-12\">manufacturer</p>"
-										+ "<br><p style=\"margin-bottom:-12\">build volume length</p>"
-										+ "<br><p style=\"margin-bottom:-12\">build volume width</p>"
-										+ "<br>build volume height"
-										+ "</body></html>", SwingConstants.LEFT);
+								message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement(".0 "), Matcher.quoteReplacement(" ")));
 								
-								message_info2 = new JLabel("<html><body>"
-										+ "<p style=\"margin-bottom:-12\"><b>Value</b></p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val1 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val2 + "</p>"
-										+ "<br><p style=\"margin-bottom:-12\">" + val3 + "</p>"
-										+ "<br>" + val4
-										+ "</body></html>", SwingConstants.LEFT);
-							}
-							
-							message_info2.setText(message_info2.getText().replaceAll(Matcher.quoteReplacement(".0 "), Matcher.quoteReplacement(" ")));
-							
-							message_info.setFont(new Font("Arial", Font.PLAIN, 12));
-							message_panel.add(message_info);
-							info_panel.add(message_panel, gbc_message_info);
-							message_info2.setFont(new Font("Arial", Font.PLAIN, 12));
-							message_panel2.add(message_info2);
-							info_panel.add(message_panel2, gbc_message_info2);
-					    	
-					    	JOptionPane.showOptionDialog(frame, info_panel, ln.toString(), JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Close"}, null);
-				    	}
-				    }
-				});
-				
-			}
-		});
-		panel_24.add(btnInfo);
+								message_info.setFont(new Font("Arial", Font.PLAIN, 12));
+								message_panel.add(message_info);
+								info_panel.add(message_panel, gbc_message_info);
+								message_info2.setFont(new Font("Arial", Font.PLAIN, 12));
+								message_panel2.add(message_info2);
+								info_panel.add(message_panel2, gbc_message_info2);
+						    	
+						    	JOptionPane.showOptionDialog(frame, info_panel, ln.toString(), JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Close"}, null);
+					    	}
+					    }
+					});
+					
+				}
+			});
+			panel_24.add(btnInfo);
+		}
 		
-		JPanel panel_pic = new JPanel();
+		/*JPanel panel_pic = new JPanel();
 		GridBagConstraints gbc_panel_pic = new GridBagConstraints();
 		gbc_panel_pic.insets = new Insets(-190, 0, 5, 0);
 		gbc_panel_pic.ipadx = -30;
@@ -4024,7 +4081,7 @@ public class Window extends JFrame {
 				    public void run() {
 				    	ListNode ln = list_1.getSelectedValue();
 				    	if(ln != null) {
-							/*try {
+							try {
 								JDialog pic_dialog = new JDialog();
 								ImageIcon pic = new ImageIcon(new URL("https://mazakfiles.blob.core.windows.net/web-site/image/machine/large/96c238cf-1e88-43ab-8824-dc2d1cd630ce/INTEGREX-e-420H-ST_Large.gif")); // TODO image property
 								int pic_width = pic.getIconWidth(), pic_height = pic.getIconHeight();
@@ -4058,14 +4115,14 @@ public class Window extends JFrame {
 					            });
 							} catch (Exception e) {
 								JOptionPane.showMessageDialog(frame, new JLabel("No available picture.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
-							}*/
+							}
 				    	}
 				    }
 				});
 				
 			}
 		});
-		panel_pic.add(btnPic);
+		panel_pic.add(btnPic);*/
 		
 		JPanel panel_17 = new JPanel();
 		GridBagConstraints gbc_panel_17 = new GridBagConstraints();
@@ -4395,7 +4452,7 @@ public class Window extends JFrame {
 		GridBagConstraints gbc_btnAnalyzeFactory = new GridBagConstraints();
 		gbc_btnAnalyzeFactory.weightx = 1.0;
 		gbc_btnAnalyzeFactory.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnAnalyzeFactory.insets = new Insets(125, 225, 10, 225);
+		gbc_btnAnalyzeFactory.insets = new Insets(105, 225, 10, 225);
 		gbc_btnAnalyzeFactory.gridx = 0;
 		gbc_btnAnalyzeFactory.gridy = 0;
 		panel.add(btnAnalyzeFactory, gbc_btnAnalyzeFactory);
@@ -4637,11 +4694,30 @@ public class Window extends JFrame {
             }
         });
 		
+		JButton btnQuery = new JButton("Query Capability Models");
+		btnQuery.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnQuery = new GridBagConstraints();
+		gbc_btnQuery.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnQuery.insets = new Insets(0, 225, 10, 225);
+		gbc_btnQuery.gridx = 0;
+		gbc_btnQuery.gridy = 2;
+		panel.add(btnQuery, gbc_btnQuery);
+		btnQuery.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	if(saved_match_data.size() == 0)
+        			JOptionPane.showMessageDialog(frame, new JLabel("<html><center>There are no capability models saved.</html>", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+            	else {
+            		analyzePage4();
+                	return;
+            	}
+            }
+        });
+		
 		JButton btnBack = new JButton("Back");
 		btnBack.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnBack = new GridBagConstraints();
 		gbc_btnBack.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnBack.insets = new Insets(69, 290, 0, 290);
+		gbc_btnBack.insets = new Insets(35, 290, 0, 290);
 		gbc_btnBack.gridx = 0;
 		gbc_btnBack.gridy = 3;
 		panel.add(btnBack, gbc_btnBack);
@@ -4651,6 +4727,14 @@ public class Window extends JFrame {
                 return;
             }
         });
+		
+		JLabel build_pic = new JLabel(new ImageIcon(getClass().getResource("/images/analyze.png")));
+		GridBagConstraints gbc_buildPic = new GridBagConstraints();
+		gbc_buildPic.fill = GridBagConstraints.HORIZONTAL;
+		gbc_buildPic.insets = new Insets(-55, 8, 0, 0);
+		gbc_buildPic.gridx = 0;
+		gbc_buildPic.gridy = 4;
+		panel.add(build_pic, gbc_buildPic);
 		
 		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
 		validate();
@@ -4717,7 +4801,7 @@ public class Window extends JFrame {
 					}
 					
 					int total_width = 0;
-					for(c = 0; c < cols; c++) {
+					for(c = 0; c < cols; ++c) {
 						int min_width = 100, max_width = 700;
 						cm.getColumn(c).setMinWidth(min_width);
 						cm.getColumn(c).setMaxWidth(max_width);
@@ -6774,37 +6858,47 @@ public class Window extends JFrame {
 				dtm.addColumn(omw2.toString(), new_col);
 		}
 		
+		getContentPane().removeAll();
+		
 		JPanel panel = new JPanel();
 		getContentPane().add(panel, BorderLayout.CENTER);
 		GridBagLayout gbl_panel = new GridBagLayout();
-		gbl_panel.columnWidths = new int[]{684, 0};
-		gbl_panel.rowHeights = new int[]{50, 189, 40, 0};
+		gbl_panel.columnWidths = new int[]{0, 0};
+		gbl_panel.rowHeights = new int[] {0, 75, 0};
 		gbl_panel.columnWeights = new double[]{1.0, Double.MIN_VALUE};
-		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 1.0, 1.0};
 		panel.setLayout(gbl_panel);
 		
-		JLabel lblFactoryAnalysisResults = new JLabel("Compare Factories");
-		lblFactoryAnalysisResults.setFont(new Font("Arial", Font.PLAIN, 15));
-		GridBagConstraints gbc_lblFactoryAnalysisResults = new GridBagConstraints();
-		gbc_lblFactoryAnalysisResults.insets = new Insets(14, 0, 5, 0);
-		gbc_lblFactoryAnalysisResults.fill = GridBagConstraints.VERTICAL;
-		gbc_lblFactoryAnalysisResults.gridx = 0;
-		gbc_lblFactoryAnalysisResults.gridy = 0;
-		panel.add(lblFactoryAnalysisResults, gbc_lblFactoryAnalysisResults);
+		JPanel panel_4 = new JPanel();
+		GridBagConstraints gbc_panel_4 = new GridBagConstraints();
+		gbc_panel_4.insets = new Insets(20, 0, 5, 0);
+		gbc_panel_4.fill = GridBagConstraints.BOTH;
+		gbc_panel_4.gridx = 0;
+		gbc_panel_4.gridy = 0;
+		panel.add(panel_4, gbc_panel_4);
+		panel_4.setLayout(new BorderLayout(0, 0));
 		
-		JPanel panel_1 = new JPanel();
-		GridBagConstraints gbc_panel_1 = new GridBagConstraints();
-		gbc_panel_1.insets = new Insets(0, 0, 5, 0);
-		gbc_panel_1.fill = GridBagConstraints.BOTH;
-		gbc_panel_1.gridx = 0;
-		gbc_panel_1.gridy = 1;
-		panel.add(panel_1, gbc_panel_1);
-		GridBagLayout gbl_panel_1 = new GridBagLayout();
-		gbl_panel_1.columnWidths = new int[]{0, 0};
-		gbl_panel_1.rowHeights = new int[]{183, 0};
-		gbl_panel_1.columnWeights = new double[]{1.0, Double.MIN_VALUE};
-		gbl_panel_1.rowWeights = new double[]{1.0, Double.MIN_VALUE};
-		panel_1.setLayout(gbl_panel_1);
+		JLabel lblCompanyInformation = new JLabel("Compare Factories");
+		lblCompanyInformation.setFont(new Font("Arial", Font.PLAIN, 15));
+		lblCompanyInformation.setHorizontalAlignment(SwingConstants.CENTER);
+		panel_4.add(lblCompanyInformation, BorderLayout.CENTER);
+		
+		JPanel panel_2 = new JPanel();
+		panel_2.setBorder(new MatteBorder(1, 0, 1, 0, tab_color2));
+		panel_2.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_2 = new GridBagConstraints();
+		gbc_panel_2.insets = new Insets(15, 0, 5, 0);
+		gbc_panel_2.fill = GridBagConstraints.BOTH;
+		gbc_panel_2.weightx = 1.0;
+		gbc_panel_2.gridx = 0;
+		gbc_panel_2.gridy = 1;
+		panel.add(panel_2, gbc_panel_2);
+		GridBagLayout gbl_panel_2 = new GridBagLayout();
+		gbl_panel_2.columnWidths = new int[]{654, 0};
+		gbl_panel_2.rowHeights = new int[]{0};
+		gbl_panel_2.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_panel_2.rowWeights = new double[]{1.0};
+		panel_2.setLayout(gbl_panel_2);
 		
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBackground(Color.WHITE);
@@ -6814,11 +6908,11 @@ public class Window extends JFrame {
 		scrollPane.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
 		scrollPane.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
-		gbc_scrollPane.insets = new Insets(10, 50, 0, 50);
+		gbc_scrollPane.insets = new Insets(15, 50, 15, 50);
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane.gridx = 0;
 		gbc_scrollPane.gridy = 0;
-		panel_1.add(scrollPane, gbc_scrollPane);
+		panel_2.add(scrollPane, gbc_scrollPane);
 		
 		JTable table = new JTable();
 		table.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -6836,35 +6930,517 @@ public class Window extends JFrame {
 		table.getTableHeader().setReorderingAllowed(false);
 		scrollPane.setViewportView(table);
 		
-		JPanel panel_2 = new JPanel();
-		GridBagConstraints gbc_panel_2 = new GridBagConstraints();
-		gbc_panel_2.insets = new Insets(10, 0, 0, 0);
-		gbc_panel_2.fill = GridBagConstraints.BOTH;
-		gbc_panel_2.gridx = 0;
-		gbc_panel_2.gridy = 2;
-		panel.add(panel_2, gbc_panel_2);
-		GridBagLayout gbl_panel_2 = new GridBagLayout();
-		gbl_panel_2.columnWidths = new int[]{0, 0};
-		gbl_panel_2.rowHeights = new int[]{0, 0};
-		gbl_panel_2.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_panel_2.rowWeights = new double[]{0.0, Double.MIN_VALUE};
-		panel_2.setLayout(gbl_panel_2);
+		JPanel panel_3 = new JPanel();
+		GridBagConstraints gbc_panel_3 = new GridBagConstraints();
+		gbc_panel_3.insets = new Insets(12, 0, 17, 0);
+		gbc_panel_3.fill = GridBagConstraints.BOTH;
+		gbc_panel_3.gridx = 0;
+		gbc_panel_3.gridy = 2;
+		panel.add(panel_3, gbc_panel_3);
+		GridBagLayout gbl_panel_3 = new GridBagLayout();
+		gbl_panel_3.columnWidths = new int[]{0, 0};
+		gbl_panel_3.rowHeights = new int[]{0, 0};
+		gbl_panel_3.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+		gbl_panel_3.rowWeights = new double[]{0.0, Double.MIN_VALUE};
+		panel_3.setLayout(gbl_panel_3);
 		
 		JButton btnMenu = new JButton("Menu");
 		btnMenu.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnMenu = new GridBagConstraints();
-		gbc_btnMenu.insets = new Insets(13, 290, 5, 290);
-		gbc_btnMenu.weightx = 1.0;
-		gbc_btnMenu.fill = GridBagConstraints.BOTH;
+		gbc_btnMenu.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnMenu.weightx = 0.5;
+		gbc_btnMenu.insets = new Insets(0, 290, 0, 290);
 		gbc_btnMenu.gridx = 0;
 		gbc_btnMenu.gridy = 0;
-		panel_2.add(btnMenu, gbc_btnMenu);
+		panel_3.add(btnMenu, gbc_btnMenu);
 		btnMenu.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				menuPage();
-				return;
+            public void actionPerformed(ActionEvent e) {
+            	menuPage();
+                return;
+            }
+        });
+		
+		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
+		validate();
+	}
+	
+	private void analyzePage4() {
+		getContentPane().removeAll();
+		
+		JPanel panel = new JPanel();
+		getContentPane().add(panel, BorderLayout.CENTER);
+		GridBagLayout gbl_panel = new GridBagLayout();
+		gbl_panel.columnWidths = new int[]{0, 0};
+		gbl_panel.rowHeights = new int[] {0, 492, 0};
+		gbl_panel.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 1.0, 0.0};
+		panel.setLayout(gbl_panel);
+		
+		JPanel panel_4 = new JPanel();
+		GridBagConstraints gbc_panel_4 = new GridBagConstraints();
+		gbc_panel_4.insets = new Insets(20, 0, 5, 0);
+		gbc_panel_4.fill = GridBagConstraints.BOTH;
+		gbc_panel_4.gridx = 0;
+		gbc_panel_4.gridy = 0;
+		panel.add(panel_4, gbc_panel_4);
+		panel_4.setLayout(new BorderLayout(0, 0));
+		
+		JLabel lblCompanyInformation = new JLabel("Query Capability Models");
+		lblCompanyInformation.setFont(new Font("Arial", Font.PLAIN, 15));
+		lblCompanyInformation.setHorizontalAlignment(SwingConstants.CENTER);
+		panel_4.add(lblCompanyInformation, BorderLayout.CENTER);
+		
+		JPanel panel_2 = new JPanel();
+		panel_2.setBorder(new MatteBorder(1, 0, 1, 0, tab_color2));
+		panel_2.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_2 = new GridBagConstraints();
+		gbc_panel_2.insets = new Insets(15, 0, 5, 0);
+		gbc_panel_2.fill = GridBagConstraints.BOTH;
+		gbc_panel_2.weightx = 1.0;
+		gbc_panel_2.gridx = 0;
+		gbc_panel_2.gridy = 1;
+		panel.add(panel_2, gbc_panel_2);
+		GridBagLayout gbl_panel_2 = new GridBagLayout();
+		gbl_panel_2.columnWidths = new int[]{654, 31, 247, 0};
+		gbl_panel_2.rowHeights = new int[]{0, -3, 0, 0, -17, 0};
+		gbl_panel_2.columnWeights = new double[]{1.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel_2.rowWeights = new double[]{0.0, 0.0, 1.0, 0.0, 0.0, 1.0};
+		panel_2.setLayout(gbl_panel_2);
+		
+		JLabel lblMaterialCapabilityFilters = new JLabel("Material capability filters:");
+		GridBagConstraints gbc_lblMaterialCapabilityFilters = new GridBagConstraints();
+		gbc_lblMaterialCapabilityFilters.insets = new Insets(10, 20, 5, 5);
+		gbc_lblMaterialCapabilityFilters.fill = GridBagConstraints.BOTH;
+		gbc_lblMaterialCapabilityFilters.gridx = 0;
+		gbc_lblMaterialCapabilityFilters.gridy = 0;
+		panel_2.add(lblMaterialCapabilityFilters, gbc_lblMaterialCapabilityFilters);
+		
+		JComboBox<IndividualWrapper> mat = new JComboBox<>();
+		mat.setFont(new Font("Arial", Font.PLAIN, 12));
+		mat.setForeground(Color.DARK_GRAY);
+		mat.setBackground(Color.WHITE);
+		mat.setUI(new ComboUI(mat, true, Color.WHITE));
+		mat.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+		mat.setFocusable(false);
+		mat.setRenderer(new PromptComboBoxRenderer("Select material capability"));
+		int mat_insert = 0;
+		for(IndividualWrapper iw : mat_list) {
+			mat.insertItemAt(iw, mat_insert);
+			++mat_insert;
+		}
+		mat.setSelectedIndex(-1);
+		
+		JPanel panel_7 = new JPanel();
+		panel_7.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_7 = new GridBagConstraints();
+		gbc_panel_7.fill = GridBagConstraints.BOTH;
+		gbc_panel_7.insets = new Insets(0, 12, 0, 6);
+		gbc_panel_7.gridheight = 6;
+		gbc_panel_7.gridx = 1;
+		gbc_panel_7.gridy = 0;
+		panel_2.add(panel_7, gbc_panel_7);
+		GridBagLayout gbl_panel_7 = new GridBagLayout();
+		gbl_panel_7.columnWidths = new int[]{-107, 0};
+		gbl_panel_7.rowHeights = new int[]{1, 0};
+		gbl_panel_7.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+		gbl_panel_7.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		panel_7.setLayout(gbl_panel_7);
+		
+		JSeparator separator = new JSeparator();
+		separator.setOrientation(SwingConstants.VERTICAL);
+		separator.setForeground(Color.LIGHT_GRAY);
+		separator.setBackground(tab_color1);
+		GridBagConstraints gbc_separator = new GridBagConstraints();
+		gbc_separator.insets = new Insets(15, 0, 20, 0);
+		gbc_separator.weightx = 1.0;
+		gbc_separator.fill = GridBagConstraints.BOTH;
+		gbc_separator.gridx = 0;
+		gbc_separator.gridy = 0;
+		panel_7.add(separator, gbc_separator);
+		
+		JLabel lblQueryResults = new JLabel("Query results:");
+		GridBagConstraints gbc_lblQueryResults = new GridBagConstraints();
+		gbc_lblQueryResults.fill = GridBagConstraints.BOTH;
+		gbc_lblQueryResults.insets = new Insets(10, 0, 5, 20);
+		gbc_lblQueryResults.gridx = 2;
+		gbc_lblQueryResults.gridy = 0;
+		panel_2.add(lblQueryResults, gbc_lblQueryResults);
+		
+		JPanel panel_5 = new JPanel();
+		panel_5.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_5 = new GridBagConstraints();
+		gbc_panel_5.gridheight = 5;
+		gbc_panel_5.fill = GridBagConstraints.BOTH;
+		gbc_panel_5.gridx = 2;
+		gbc_panel_5.gridy = 1;
+		panel_2.add(panel_5, gbc_panel_5);
+		GridBagLayout gbl_panel_5 = new GridBagLayout();
+		gbl_panel_5.columnWidths = new int[]{0, 0};
+		gbl_panel_5.rowHeights = new int[]{0, 0};
+		gbl_panel_5.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_panel_5.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		panel_5.setLayout(gbl_panel_5);
+		
+		DefaultListModel<MatchData> list_model_results = new DefaultListModel<>();
+		JList<MatchData> list_results = new JList<>(list_model_results);
+		list_results.setFont(new Font("Arial", Font.PLAIN, 12));
+		list_results.setVisibleRowCount(6);
+		list_results.setFocusable(false);
+		list_results.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+		list_results.setSelectionModel(new DefaultListSelectionModel() {
+			@Override
+			public void setSelectionInterval(int index0, int index1) {
+				super.setSelectionInterval(-1, -1);
+			}
+			@Override
+			public void addSelectionInterval(int index0, int index1) {
+				super.setSelectionInterval(-1, -1);
 			}
 		});
+		
+		for(MatchData md : saved_match_data)
+			list_model_results.addElement(md);
+		
+		JScrollPane scrollPane_2 = new JScrollPane();
+		scrollPane_2.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+    	scrollPane_2.getVerticalScrollBar().setUnitIncrement(10);
+    	scrollPane_2.getHorizontalScrollBar().setUnitIncrement(10);
+    	scrollPane_2.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+    	scrollPane_2.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+    	scrollPane_2.setOpaque(false);
+    	scrollPane_2.setViewportView(list_results);
+		GridBagConstraints gbc_scrollPane_2 = new GridBagConstraints();
+		gbc_scrollPane_2.insets = new Insets(0, 0, 20, 20);
+		gbc_scrollPane_2.fill = GridBagConstraints.BOTH;
+		gbc_scrollPane_2.gridx = 0;
+		gbc_scrollPane_2.gridy = 0;
+		panel_5.add(scrollPane_2, gbc_scrollPane_2);
+		
+		GridBagConstraints gbc_type = new GridBagConstraints();
+		gbc_type.insets = new Insets(0, 20, 5, 5);
+		gbc_type.fill = GridBagConstraints.BOTH;
+		gbc_type.gridx = 0;
+		gbc_type.gridy = 1;
+		panel_2.add(mat, gbc_type);
+		
+		JPanel panel_1 = new JPanel();
+		panel_1.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_1 = new GridBagConstraints();
+		gbc_panel_1.insets = new Insets(5, 20, 5, 5);
+		gbc_panel_1.fill = GridBagConstraints.BOTH;
+		gbc_panel_1.gridx = 0;
+		gbc_panel_1.gridy = 2;
+		panel_2.add(panel_1, gbc_panel_1);
+		GridBagLayout gbl_panel_1 = new GridBagLayout();
+		gbl_panel_1.columnWidths = new int[]{0, 0, 0};
+		gbl_panel_1.rowHeights = new int[]{0, 0, 0};
+		gbl_panel_1.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
+		gbl_panel_1.rowWeights = new double[]{0.0, 1.0, Double.MIN_VALUE};
+		panel_1.setLayout(gbl_panel_1);
+		
+		DefaultListModel<IndividualWrapper> list_model_mat = new DefaultListModel<>();
+		JList<IndividualWrapper> list_mat = new JList<>(list_model_mat);
+		list_mat.setFont(new Font("Arial", Font.PLAIN, 12));
+		list_mat.setVisibleRowCount(6);
+		list_mat.setFocusable(false);
+		list_mat.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		DefaultListModel<IndividualWrapper> list_model_proc = new DefaultListModel<>();
+		JList<IndividualWrapper> list_proc = new JList<>(list_model_proc);
+		list_proc.setFont(new Font("Arial", Font.PLAIN, 12));
+		list_proc.setVisibleRowCount(6);
+		list_proc.setFocusable(false);
+		list_proc.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+    	scrollPane_1.getVerticalScrollBar().setUnitIncrement(10);
+    	scrollPane_1.getHorizontalScrollBar().setUnitIncrement(10);
+    	scrollPane_1.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+    	scrollPane_1.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+    	scrollPane_1.setOpaque(false);
+    	scrollPane_1.setViewportView(list_mat);
+		GridBagConstraints gbc_scrollPane_1 = new GridBagConstraints();
+		gbc_scrollPane_1.gridheight = 2;
+		gbc_scrollPane_1.insets = new Insets(0, 0, 0, 10);
+		gbc_scrollPane_1.fill = GridBagConstraints.BOTH;
+		gbc_scrollPane_1.gridx = 0;
+		gbc_scrollPane_1.gridy = 0;
+		panel_1.add(scrollPane_1, gbc_scrollPane_1);
+		
+		JButton btnAdd_1 = new JButton("Add");
+		GridBagConstraints gbc_btnAdd_1 = new GridBagConstraints();
+		gbc_btnAdd_1.fill = GridBagConstraints.BOTH;
+		gbc_btnAdd_1.gridx = 1;
+		gbc_btnAdd_1.gridy = 0;
+		panel_1.add(btnAdd_1, gbc_btnAdd_1);
+		btnAdd_1.setFont(new Font("Arial", Font.PLAIN, 15));
+		btnAdd_1.setUI(new ButtonUI2());
+		btnAdd_1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	if(mat.getSelectedIndex() != -1) {
+	            	boolean exists = false;
+	            	for(int x = 0; x < list_model_mat.size(); ++x) {
+	            		if(list_model_mat.getElementAt(x).toString().equals(((IndividualWrapper)mat.getSelectedItem()).toString())) {
+	            			exists = true;
+	            			x = list_model_mat.size();
+	            		}
+	            	}
+	            	if(!exists) {
+	            		IndividualWrapper added = (IndividualWrapper)mat.getSelectedItem();
+	            		list_model_mat.addElement(added);
+	            		String added_string = added.toString().toLowerCase();
+	            		for(int x = 0; x < list_model_results.size(); ++x) {
+	            			boolean filtered = false;
+	            			for(int y = 0; y < list_model_results.getElementAt(x).getMaterials().size(); ++y) {
+	            				if(list_model_results.getElementAt(x).getMaterials().get(y).toString().toLowerCase().equals(added_string)) {
+	            					filtered = true;
+	            					break;
+	            				}
+	            			}
+	            			if(!filtered)
+	            				list_model_results.removeElementAt(x);
+	            		}
+	            	}
+	            	mat.setSelectedIndex(-1);
+            	}
+            }
+        });
+		
+		JButton btnRemove_1 = new JButton("Remove");
+		btnRemove_1.setFont(new Font("Arial", Font.PLAIN, 15));
+		btnRemove_1.setUI(new ButtonUI2());
+		GridBagConstraints gbc_btnRemove_1 = new GridBagConstraints();
+		gbc_btnRemove_1.anchor = GridBagConstraints.NORTH;
+		gbc_btnRemove_1.insets = new Insets(10, 0, 0, 0);
+		gbc_btnRemove_1.gridx = 1;
+		gbc_btnRemove_1.gridy = 1;
+		panel_1.add(btnRemove_1, gbc_btnRemove_1);
+		btnRemove_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if(list_mat.getSelectedIndex() != -1)
+					list_model_mat.remove(list_mat.getSelectedIndex());
+				list_model_results.clear();
+        		for(MatchData md : saved_match_data) {
+        			boolean filtered_mat = list_model_mat.size() == 0;
+        			for(int x = 0; x < list_model_mat.size(); ++x) {
+        				String mat_required = list_model_mat.getElementAt(x).toString().toLowerCase();
+        				boolean found = false;
+        				for(int y = 0; y < md.getMaterials().size(); ++y) {
+        					if(md.getMaterials().get(y).toString().toLowerCase().equals(mat_required)) {
+        						found = true;
+        						break;
+        					}
+        				}
+        				if(!found)
+        					break;
+        				else if(x == list_model_mat.size() - 1)
+        					filtered_mat = true;
+        			}
+        			if(filtered_mat) {
+        				boolean filtered_proc = list_model_proc.size() == 0;
+            			for(int x = 0; x < list_model_proc.size(); ++x) {
+            				String proc_required = list_model_proc.getElementAt(x).toString().toLowerCase();
+            				boolean found = false;
+            				for(int y = 0; y < md.getFunctions().size(); ++y) {
+            					if(md.getFunctions().get(y).toString().toLowerCase().equals(proc_required)) {
+            						found = true;
+            						break;
+            					}
+            				}
+            				if(!found)
+            					break;
+            				else if(x == list_model_proc.size() - 1)
+            					filtered_proc = true;
+            			}
+            			if(filtered_proc)
+            				list_model_results.addElement(md);
+        			}
+        		}
+			}
+		});
+		
+		JLabel lblProcessCapabilityFilters = new JLabel("Process capability filters:");
+		GridBagConstraints gbc_lblProcessCapabilityFilters = new GridBagConstraints();
+		gbc_lblProcessCapabilityFilters.insets = new Insets(10, 20, 5, 5);
+		gbc_lblProcessCapabilityFilters.fill = GridBagConstraints.BOTH;
+		gbc_lblProcessCapabilityFilters.gridx = 0;
+		gbc_lblProcessCapabilityFilters.gridy = 3;
+		panel_2.add(lblProcessCapabilityFilters, gbc_lblProcessCapabilityFilters);
+		
+		JComboBox<IndividualWrapper> proc = new JComboBox<>();
+		proc.setFont(new Font("Arial", Font.PLAIN, 12));
+		proc.setForeground(Color.DARK_GRAY);
+		proc.setBackground(Color.WHITE);
+		proc.setUI(new ComboUI(proc, true, Color.WHITE));
+		proc.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+		proc.setFocusable(false);
+		proc.setRenderer(new PromptComboBoxRenderer("Select process capability"));
+		int proc_insert = 0;
+		for(IndividualWrapper iw : proc_list) {
+			proc.insertItemAt(iw, proc_insert);
+			++proc_insert;
+		}
+		proc.setSelectedIndex(-1);
+		GridBagConstraints gbc_proc = new GridBagConstraints();
+		gbc_proc.insets = new Insets(0, 20, 5, 5);
+		gbc_proc.fill = GridBagConstraints.BOTH;
+		gbc_proc.gridx = 0;
+		gbc_proc.gridy = 4;
+		panel_2.add(proc, gbc_proc);
+		
+		JPanel panel_6 = new JPanel();
+		panel_6.setBackground(tab_color1);
+		GridBagConstraints gbc_panel_6 = new GridBagConstraints();
+		gbc_panel_6.insets = new Insets(5, 20, 20, 5);
+		gbc_panel_6.fill = GridBagConstraints.BOTH;
+		gbc_panel_6.gridx = 0;
+		gbc_panel_6.gridy = 5;
+		panel_2.add(panel_6, gbc_panel_6);
+		GridBagLayout gbl_panel_6 = new GridBagLayout();
+		gbl_panel_6.columnWidths = new int[]{0, 0, 0};
+		gbl_panel_6.rowHeights = new int[]{0, 0};
+		gbl_panel_6.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
+		gbl_panel_6.rowWeights = new double[]{0.0, 1.0};
+		panel_6.setLayout(gbl_panel_6);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+    	scrollPane.getVerticalScrollBar().setUnitIncrement(10);
+    	scrollPane.getHorizontalScrollBar().setUnitIncrement(10);
+    	scrollPane.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+    	scrollPane.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+    	scrollPane.setOpaque(false);
+    	scrollPane.setViewportView(list_proc);
+		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+		gbc_scrollPane.gridheight = 2;
+		gbc_scrollPane.insets = new Insets(0, 0, 0, 10);
+		gbc_scrollPane.fill = GridBagConstraints.BOTH;
+		gbc_scrollPane.gridx = 0;
+		gbc_scrollPane.gridy = 0;
+		panel_6.add(scrollPane, gbc_scrollPane);
+		
+		JButton btnAdd = new JButton("Add");
+		GridBagConstraints gbc_btnAdd = new GridBagConstraints();
+		gbc_btnAdd.fill = GridBagConstraints.BOTH;
+		gbc_btnAdd.gridx = 1;
+		gbc_btnAdd.gridy = 0;
+		panel_6.add(btnAdd, gbc_btnAdd);
+		btnAdd.setFont(new Font("Arial", Font.PLAIN, 15));
+		btnAdd.setUI(new ButtonUI2());
+		btnAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	if(proc.getSelectedIndex() != -1) {
+	            	boolean exists = false;
+	            	for(int x = 0; x < list_model_proc.size(); ++x) {
+	            		if(list_model_proc.getElementAt(x).toString().equals(((IndividualWrapper)proc.getSelectedItem()).toString())) {
+	            			exists = true;
+	            			x = list_model_proc.size();
+	            		}
+	            	}
+	            	if(!exists) {
+	            		IndividualWrapper added = (IndividualWrapper)proc.getSelectedItem();
+	            		list_model_proc.addElement(added);
+	            		String added_string = added.toString().toLowerCase();
+	            		for(int x = 0; x < list_model_results.size(); ++x) {
+	            			boolean filtered = false;
+	            			for(int y = 0; y < list_model_results.getElementAt(x).getFunctions().size(); ++y) {
+	            				if(list_model_results.getElementAt(x).getFunctions().get(y).toString().toLowerCase().equals(added_string)) {
+	            					filtered = true;
+	            					break;
+	            				}
+	            			}
+	            			if(!filtered)
+	            				list_model_results.removeElementAt(x);
+	            		}
+	            	}
+	            	proc.setSelectedIndex(-1);
+            	}
+            }
+        });
+		
+		JButton btnRemove = new JButton("Remove");
+		btnRemove.setFont(new Font("Arial", Font.PLAIN, 15));
+		btnRemove.setUI(new ButtonUI2());
+		GridBagConstraints gbc_btnRemove = new GridBagConstraints();
+		gbc_btnRemove.insets = new Insets(10, 0, 0, 0);
+		gbc_btnRemove.anchor = GridBagConstraints.NORTH;
+		gbc_btnRemove.gridx = 1;
+		gbc_btnRemove.gridy = 1;
+		panel_6.add(btnRemove, gbc_btnRemove);
+		btnRemove.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if(list_proc.getSelectedIndex() != -1)
+					list_model_proc.remove(list_proc.getSelectedIndex());
+				list_model_results.clear();
+        		for(MatchData md : saved_match_data) {
+        			boolean filtered_mat = list_model_mat.size() == 0;
+        			for(int x = 0; x < list_model_mat.size(); ++x) {
+        				String mat_required = list_model_mat.getElementAt(x).toString().toLowerCase();
+        				boolean found = false;
+        				for(int y = 0; y < md.getMaterials().size(); ++y) {
+        					if(md.getMaterials().get(y).toString().toLowerCase().equals(mat_required)) {
+        						found = true;
+        						break;
+        					}
+        				}
+        				if(!found)
+        					break;
+        				else if(x == list_model_mat.size() - 1)
+        					filtered_mat = true;
+        			}
+        			if(filtered_mat) {
+        				boolean filtered_proc = list_model_proc.size() == 0;
+            			for(int x = 0; x < list_model_proc.size(); ++x) {
+            				String proc_required = list_model_proc.getElementAt(x).toString().toLowerCase();
+            				boolean found = false;
+            				for(int y = 0; y < md.getFunctions().size(); ++y) {
+            					if(md.getFunctions().get(y).toString().toLowerCase().equals(proc_required)) {
+            						found = true;
+            						break;
+            					}
+            				}
+            				if(!found)
+            					break;
+            				else if(x == list_model_proc.size() - 1)
+            					filtered_proc = true;
+            			}
+            			if(filtered_proc)
+            				list_model_results.addElement(md);
+        			}
+        		}
+			}
+		});
+		
+		JPanel panel_3 = new JPanel();
+		GridBagConstraints gbc_panel_3 = new GridBagConstraints();
+		gbc_panel_3.insets = new Insets(12, 0, 17, 0);
+		gbc_panel_3.fill = GridBagConstraints.BOTH;
+		gbc_panel_3.gridx = 0;
+		gbc_panel_3.gridy = 2;
+		panel.add(panel_3, gbc_panel_3);
+		GridBagLayout gbl_panel_3 = new GridBagLayout();
+		gbl_panel_3.columnWidths = new int[]{0, 0};
+		gbl_panel_3.rowHeights = new int[]{0, 0};
+		gbl_panel_3.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+		gbl_panel_3.rowWeights = new double[]{0.0, Double.MIN_VALUE};
+		panel_3.setLayout(gbl_panel_3);
+		
+		JButton btnMenu = new JButton("Menu");
+		btnMenu.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnMenu = new GridBagConstraints();
+		gbc_btnMenu.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnMenu.weightx = 0.5;
+		gbc_btnMenu.insets = new Insets(0, 290, 0, 290);
+		gbc_btnMenu.gridx = 0;
+		gbc_btnMenu.gridy = 0;
+		panel_3.add(btnMenu, gbc_btnMenu);
+		btnMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	menuPage();
+                return;
+            }
+        });
 		
 		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
 		validate();
@@ -6894,7 +7470,7 @@ public class Window extends JFrame {
 		GridBagConstraints gbc_btnBuildNewWorkOrder = new GridBagConstraints();
 		gbc_btnBuildNewWorkOrder.weightx = 1.0;
 		gbc_btnBuildNewWorkOrder.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnBuildNewWorkOrder.insets = new Insets(125, 225, 10, 225);
+		gbc_btnBuildNewWorkOrder.insets = new Insets(105, 225, 10, 225);
 		gbc_btnBuildNewWorkOrder.gridx = 0;
 		gbc_btnBuildNewWorkOrder.gridy = 0;
 		panel.add(btnBuildNewWorkOrder, gbc_btnBuildNewWorkOrder);
@@ -6908,7 +7484,7 @@ public class Window extends JFrame {
 		JButton btnImportWorkOrder = new JButton("Import Work Order");
 		btnImportWorkOrder.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnImportWorkOrder = new GridBagConstraints();
-		gbc_btnImportWorkOrder.insets = new Insets(0, 225, 5, 225);
+		gbc_btnImportWorkOrder.insets = new Insets(0, 225, 10, 225);
 		gbc_btnImportWorkOrder.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnImportWorkOrder.gridx = 0;
 		gbc_btnImportWorkOrder.gridy = 2;
@@ -6975,7 +7551,7 @@ public class Window extends JFrame {
 									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
 								}
 								if(f == 0)
-									matchPage3();
+									matchPage2();
 							}
 						}
 				    }
@@ -7056,7 +7632,7 @@ public class Window extends JFrame {
 			                	if(list_save.getSelectedValue() != null) {
 			                		OntModel model = list_save.getSelectedValue().getModel();
 			                		setImportedInfo(model, 2);
-			                		matchPage3();
+			                		matchPage2();
 			                	}
 			                    return;
 			                case JOptionPane.CANCEL_OPTION:
@@ -7070,13 +7646,102 @@ public class Window extends JFrame {
             }
         });
 		
+		JButton btnSupply = new JButton("Build Supply Chains");
+		btnSupply.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnSupply = new GridBagConstraints();
+		gbc_btnSupply.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnSupply.insets = new Insets(15, 225, 10, 225);
+		gbc_btnSupply.gridx = 0;
+		gbc_btnSupply.gridy = 3;
+		panel.add(btnSupply, gbc_btnSupply);
+		btnSupply.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+            	EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	JPanel save_panel = new JPanel();
+						GridBagLayout gbl_save_panel = new GridBagLayout();
+						gbl_save_panel.columnWidths = new int[]{345, 0};
+						gbl_save_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+						gbl_save_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+						save_panel.setLayout(gbl_save_panel); 
+						
+						JPanel message_panel = new JPanel(new FlowLayout(FlowLayout.LEADING,0, 0));
+						GridBagConstraints gbc_message_save = new GridBagConstraints();
+						gbc_message_save.insets = new Insets(1, 0, 5, 0);
+						gbc_message_save.fill = GridBagConstraints.BOTH;
+						gbc_message_save.gridx = 0;
+						gbc_message_save.gridy = 0;
+						JLabel message_save = new JLabel("Select a work order:", SwingConstants.LEFT);
+						message_save.setFont(new Font("Arial", Font.PLAIN, 12));
+						message_panel.add(message_save);
+						save_panel.add(message_panel, gbc_message_save);
+				    	
+				    	JPanel list_panel = new JPanel();
+						list_panel.setLayout(new BorderLayout(0, 0));
+						list_panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+						list_panel.setBackground(Color.WHITE);
+
+						DefaultListModel<OntModelWrapper> list_model_save = new DefaultListModel<>();
+						for(OntModelWrapper omw : saved_work_orders) {
+							list_model_save.addElement(omw);
+						}
+						
+						JList<OntModelWrapper> list_save = new JList<>(list_model_save);
+						list_save.setFont(new Font("Arial", Font.PLAIN, 12));
+						list_save.setVisibleRowCount(6);
+						list_save.setFocusable(false);
+						list_save.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+						list_panel.add(list_save, BorderLayout.CENTER);
+				    	
+						JScrollPane scrollPane_save = new JScrollPane(list_save);
+				    	scrollPane_save.setBorder(BorderFactory.createEmptyBorder());
+				    	scrollPane_save.getVerticalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getHorizontalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.setOpaque(false);
+						list_panel.add(scrollPane_save);
+						
+						GridBagConstraints gbc_list_panel = new GridBagConstraints();
+						gbc_list_panel.insets = new Insets(0, 0, 8, 0);
+						gbc_list_panel.fill = GridBagConstraints.BOTH;
+						gbc_list_panel.gridx = 0;
+						gbc_list_panel.gridy = 1;
+						save_panel.add(list_panel, gbc_list_panel);
+				    	
+				    	result = JOptionPane.showOptionDialog(frame, save_panel, "Open Work Order", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Open", "Cancel"}, null);
+			            switch(result) {
+			                case JOptionPane.OK_OPTION:
+			                	if(list_save.getSelectedValue() != null) {
+			                		if(saved_match_data.size() == 0)
+			                			JOptionPane.showMessageDialog(frame, new JLabel("<html><center>There are no capability models saved.</html>", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+			                		else {
+			                			OntModel model = list_save.getSelectedValue().getModel();
+				                		setImportedInfo(model, 2);
+				                		matchPage4(false);
+			                		}
+			                	}
+			                    return;
+			                case JOptionPane.CANCEL_OPTION:
+			                    return;
+			                case JOptionPane.CLOSED_OPTION:
+			                    return;
+				    	}
+				    }
+				});
+            	
+            }
+        });
+		
 		JButton btnBack = new JButton("Back");
 		btnBack.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnBack = new GridBagConstraints();
 		gbc_btnBack.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnBack.insets = new Insets(40, 290, 0, 290);
+		gbc_btnBack.insets = new Insets(-220, 290, 0, 290);
 		gbc_btnBack.gridx = 0;
-		gbc_btnBack.gridy = 3;
+		gbc_btnBack.gridy = 4;
 		panel.add(btnBack, gbc_btnBack);
 		btnBack.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -7084,6 +7749,14 @@ public class Window extends JFrame {
                 return;
             }
         });
+		
+		JLabel build_pic = new JLabel(new ImageIcon(getClass().getResource("/images/match.png")));
+		GridBagConstraints gbc_buildPic = new GridBagConstraints();
+		gbc_buildPic.fill = GridBagConstraints.HORIZONTAL;
+		gbc_buildPic.insets = new Insets(-335, 15, 0, 0);
+		gbc_buildPic.gridx = 0;
+		gbc_buildPic.gridy = 5;
+		panel.add(build_pic, gbc_buildPic);
 		
 		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
 		validate();
@@ -8252,9 +8925,9 @@ public class Window extends JFrame {
 		btnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(saved_match_data.size() == 0)
-        			JOptionPane.showMessageDialog(frame, new JLabel("<html><center>There are no capability models saved!<br>Please go to the analysis section to create<br>and save a capability model.</html>", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+        			JOptionPane.showMessageDialog(frame, new JLabel("<html><center>There are no capability models saved.</html>", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
             	else {
-            		matchPage4();
+            		matchPage4(true);
                     return;
             	}
 			}
@@ -8264,7 +8937,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
-	private void matchPage4() {
+	private void matchPage4(boolean back_flag) {
 		getContentPane().removeAll();
 		
 		JPanel panel = new JPanel();
@@ -8459,6 +9132,7 @@ public class Window extends JFrame {
 		radioGroup.add(rdbtnFeaturebasedOptimization);
 		rdbtnFeaturebasedOptimization.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+            	opt_flag = 0;
             	chain_list_model.clear();
             	Collections.sort(chains, new Comparator() {
         			public int compare(Object o1, Object o2) {
@@ -8484,7 +9158,7 @@ public class Window extends JFrame {
 		radioGroup.add(rdbtnDistancebasedOptimization);
 		rdbtnDistancebasedOptimization.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	// TODO
+            	opt_flag = 1;
             }
         });
 		
@@ -8699,7 +9373,10 @@ public class Window extends JFrame {
             			}
             		}
             	}
-            	rdbtnFeaturebasedOptimization.doClick(); 	
+            	if(opt_flag == 0)
+            		rdbtnFeaturebasedOptimization.doClick();
+            	else if(opt_flag == 1)
+            		rdbtnDistancebasedOptimization.doClick();
             }
         });
 		
@@ -8741,7 +9418,10 @@ public class Window extends JFrame {
 		btnBack.setFont(new Font("Arial", Font.PLAIN, 15));
 		btnBack.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	matchPage3();
+            	if(back_flag)
+            		matchPage3();
+            	else
+            		matchPage1();
             	return;
             }
         });
@@ -8852,6 +9532,291 @@ public class Window extends JFrame {
             }
         });
 
+		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
+		validate();
+	}
+	
+	private void listPage() {
+		getContentPane().removeAll();
+		
+		JPanel panel = new JPanel();
+		getContentPane().add(panel, BorderLayout.CENTER);
+		GridBagLayout gbl_panel = new GridBagLayout();
+		gbl_panel.columnWidths = new int[]{0, 0};
+		gbl_panel.rowHeights = new int[]{0, 0, 0, 0};
+		gbl_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		panel.setLayout(gbl_panel);
+		
+		JButton btnFact = new JButton("List Factory Models");
+		btnFact.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnFact = new GridBagConstraints();
+		gbc_btnFact.weightx = 1.0;
+		gbc_btnFact.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnFact.insets = new Insets(105, 225, 10, 225);
+		gbc_btnFact.gridx = 0;
+		gbc_btnFact.gridy = 0;
+		panel.add(btnFact, gbc_btnFact);
+		btnFact.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                
+            	EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	JPanel save_panel = new JPanel();
+						GridBagLayout gbl_save_panel = new GridBagLayout();
+						gbl_save_panel.columnWidths = new int[]{345, 0};
+						gbl_save_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+						gbl_save_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+						save_panel.setLayout(gbl_save_panel);
+				    	
+				    	JPanel list_panel = new JPanel();
+						list_panel.setLayout(new BorderLayout(0, 0));
+						list_panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+						list_panel.setBackground(Color.WHITE);
+
+						DefaultListModel<OntModelWrapper> list_model_save = new DefaultListModel<>();
+						for(OntModelWrapper omw : saved_factories) {
+							list_model_save.addElement(omw);
+						}
+						
+						JList<OntModelWrapper> list_save = new JList<>(list_model_save);
+						list_save.setFont(new Font("Arial", Font.PLAIN, 12));
+						list_save.setVisibleRowCount(6);
+						list_save.setFocusable(false);
+						list_save.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+						list_panel.add(list_save, BorderLayout.CENTER);
+				    	
+						JScrollPane scrollPane_save = new JScrollPane(list_save);
+				    	scrollPane_save.setBorder(BorderFactory.createEmptyBorder());
+				    	scrollPane_save.getVerticalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getHorizontalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.setOpaque(false);
+						list_panel.add(scrollPane_save);
+						
+						GridBagConstraints gbc_list_panel = new GridBagConstraints();
+						gbc_list_panel.insets = new Insets(0, 0, 8, 0);
+						gbc_list_panel.fill = GridBagConstraints.BOTH;
+						gbc_list_panel.gridx = 0;
+						gbc_list_panel.gridy = 0;
+						save_panel.add(list_panel, gbc_list_panel);
+						
+						JButton btnDelete = new JButton("Delete");
+						btnDelete.setFont(new Font("Arial", Font.PLAIN, 12));
+						GridBagConstraints gbc_btnDelete = new GridBagConstraints();
+						gbc_btnDelete.fill = GridBagConstraints.HORIZONTAL;
+						gbc_btnDelete.insets = new Insets(5, 140, 0, 140);
+						gbc_btnDelete.gridx = 0;
+						gbc_btnDelete.gridy = 1;
+						save_panel.add(btnDelete, gbc_btnDelete);
+						btnDelete.addActionListener(new ActionListener() {
+				            public void actionPerformed(ActionEvent e) {
+				            	if(list_save.getSelectedValue() != null) {
+					            	OntModelWrapper deleted = list_save.getSelectedValue();
+					            	for(int x = 0; x < saved_factories.size(); ++x) {
+										if(saved_factories.get(x).toString().toLowerCase().equals(deleted.toString().toLowerCase())) {
+											saved_factories.remove(x);
+											list_model_save.removeElementAt(x);
+											break;
+										}
+									}
+				            	}
+				            }
+				        });
+				    	
+				    	JOptionPane.showOptionDialog(frame, save_panel, "Factory Models", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Close"}, null);
+				    }
+				});
+            	
+            }
+        });
+		
+		JButton btnCap = new JButton("List Capability Models");
+		btnCap.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnCap = new GridBagConstraints();
+		gbc_btnCap.insets = new Insets(0, 225, 10, 225);
+		gbc_btnCap.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnCap.gridx = 0;
+		gbc_btnCap.gridy = 1;
+		panel.add(btnCap, gbc_btnCap);
+		btnCap.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			
+				EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	JPanel save_panel = new JPanel();
+						GridBagLayout gbl_save_panel = new GridBagLayout();
+						gbl_save_panel.columnWidths = new int[]{345, 0};
+						gbl_save_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+						gbl_save_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+						save_panel.setLayout(gbl_save_panel);
+				    	
+				    	JPanel list_panel = new JPanel();
+						list_panel.setLayout(new BorderLayout(0, 0));
+						list_panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+						list_panel.setBackground(Color.WHITE);
+
+						DefaultListModel<MatchData> list_model_save = new DefaultListModel<>();
+						for(MatchData md : saved_match_data) {
+							list_model_save.addElement(md);
+						}
+						
+						JList<MatchData> list_save = new JList<>(list_model_save);
+						list_save.setFont(new Font("Arial", Font.PLAIN, 12));
+						list_save.setVisibleRowCount(6);
+						list_save.setFocusable(false);
+						list_save.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+						list_panel.add(list_save, BorderLayout.CENTER);
+				    	
+						JScrollPane scrollPane_save = new JScrollPane(list_save);
+				    	scrollPane_save.setBorder(BorderFactory.createEmptyBorder());
+				    	scrollPane_save.getVerticalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getHorizontalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.setOpaque(false);
+						list_panel.add(scrollPane_save);
+						
+						GridBagConstraints gbc_list_panel = new GridBagConstraints();
+						gbc_list_panel.insets = new Insets(0, 0, 8, 0);
+						gbc_list_panel.fill = GridBagConstraints.BOTH;
+						gbc_list_panel.gridx = 0;
+						gbc_list_panel.gridy = 0;
+						save_panel.add(list_panel, gbc_list_panel);
+						
+						JButton btnDelete = new JButton("Delete");
+						btnDelete.setFont(new Font("Arial", Font.PLAIN, 12));
+						GridBagConstraints gbc_btnDelete = new GridBagConstraints();
+						gbc_btnDelete.fill = GridBagConstraints.HORIZONTAL;
+						gbc_btnDelete.insets = new Insets(5, 140, 0, 140);
+						gbc_btnDelete.gridx = 0;
+						gbc_btnDelete.gridy = 1;
+						save_panel.add(btnDelete, gbc_btnDelete);
+						btnDelete.addActionListener(new ActionListener() {
+				            public void actionPerformed(ActionEvent e) {
+				            	if(list_save.getSelectedValue() != null) {
+					            	MatchData deleted = list_save.getSelectedValue();
+					            	for(int x = 0; x < saved_match_data.size(); ++x) {
+										if(saved_match_data.get(x).toString().toLowerCase().equals(deleted.toString().toLowerCase())) {
+											saved_match_data.remove(x);
+											list_model_save.removeElementAt(x);
+											break;
+										}
+									}
+				            	}
+				            }
+				        });
+				    	
+				    	JOptionPane.showOptionDialog(frame, save_panel, "Capability Models", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Close"}, null);
+				    }
+				});
+			
+			}
+		});
+		
+		JButton btnWork = new JButton("List Work Order Models");
+		btnWork.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnWork = new GridBagConstraints();
+		gbc_btnWork.weightx = 1.0;
+		gbc_btnWork.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnWork.insets = new Insets(0, 225, 10, 225);
+		gbc_btnWork.gridx = 0;
+		gbc_btnWork.gridy = 2;
+		panel.add(btnWork, gbc_btnWork);
+		btnWork.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                
+            	EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	JPanel save_panel = new JPanel();
+						GridBagLayout gbl_save_panel = new GridBagLayout();
+						gbl_save_panel.columnWidths = new int[]{345, 0};
+						gbl_save_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+						gbl_save_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+						save_panel.setLayout(gbl_save_panel);
+				    	
+				    	JPanel list_panel = new JPanel();
+						list_panel.setLayout(new BorderLayout(0, 0));
+						list_panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+						list_panel.setBackground(Color.WHITE);
+
+						DefaultListModel<OntModelWrapper> list_model_save = new DefaultListModel<>();
+						for(OntModelWrapper omw : saved_work_orders) {
+							list_model_save.addElement(omw);
+						}
+						
+						JList<OntModelWrapper> list_save = new JList<>(list_model_save);
+						list_save.setFont(new Font("Arial", Font.PLAIN, 12));
+						list_save.setVisibleRowCount(6);
+						list_save.setFocusable(false);
+						list_save.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+						list_panel.add(list_save, BorderLayout.CENTER);
+				    	
+						JScrollPane scrollPane_save = new JScrollPane(list_save);
+				    	scrollPane_save.setBorder(BorderFactory.createEmptyBorder());
+				    	scrollPane_save.getVerticalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getHorizontalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.setOpaque(false);
+						list_panel.add(scrollPane_save);
+						
+						GridBagConstraints gbc_list_panel = new GridBagConstraints();
+						gbc_list_panel.insets = new Insets(0, 0, 8, 0);
+						gbc_list_panel.fill = GridBagConstraints.BOTH;
+						gbc_list_panel.gridx = 0;
+						gbc_list_panel.gridy = 0;
+						save_panel.add(list_panel, gbc_list_panel);
+						
+						JButton btnDelete = new JButton("Delete");
+						btnDelete.setFont(new Font("Arial", Font.PLAIN, 12));
+						GridBagConstraints gbc_btnDelete = new GridBagConstraints();
+						gbc_btnDelete.fill = GridBagConstraints.HORIZONTAL;
+						gbc_btnDelete.insets = new Insets(5, 140, 0, 140);
+						gbc_btnDelete.gridx = 0;
+						gbc_btnDelete.gridy = 1;
+						save_panel.add(btnDelete, gbc_btnDelete);
+						btnDelete.addActionListener(new ActionListener() {
+				            public void actionPerformed(ActionEvent e) {
+				            	if(list_save.getSelectedValue() != null) {
+					            	OntModelWrapper deleted = list_save.getSelectedValue();
+					            	for(int x = 0; x < saved_work_orders.size(); ++x) {
+										if(saved_work_orders.get(x).toString().toLowerCase().equals(deleted.toString().toLowerCase())) {
+											saved_work_orders.remove(x);
+											list_model_save.removeElementAt(x);
+											break;
+										}
+									}
+				            	}
+				            }
+				        });
+				    	
+				    	JOptionPane.showOptionDialog(frame, save_panel, "Work Order Models", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Close"}, null);
+				    }
+				});
+				
+            }
+        });
+		
+		JButton btnBack = new JButton("Back");
+		btnBack.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnBack = new GridBagConstraints();
+		gbc_btnBack.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnBack.insets = new Insets(-270, 290, 0, 290);
+		gbc_btnBack.gridx = 0;
+		gbc_btnBack.gridy = 4;
+		panel.add(btnBack, gbc_btnBack);
+		btnBack.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                menuPage();
+                return;
+            }
+        });
+		
 		setBounds(this.getX() + (this.getWidth() / 2) - (screenWidth / 2), this.getY() + (this.getHeight() / 2) - (screenHeight / 2), screenWidth, screenHeight);
 		validate();
 	}

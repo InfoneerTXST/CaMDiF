@@ -89,15 +89,24 @@ public class MatchData {
 	}
 	
 	public ArrayList<String> getConcepts() {
-		return concepts;
+		ArrayList<String> temp = new ArrayList<>();
+		for(String s : concepts)
+			temp.add(s);
+		return temp;
 	}
 	
 	public ArrayList<IndividualWrapper> getMaterials() {
-		return materials;
+		ArrayList<IndividualWrapper> temp = new ArrayList<>();
+		for(IndividualWrapper iw : materials)
+			temp.add(iw);
+		return temp;
 	}
 	
 	public ArrayList<IndividualWrapper> getFunctions() {
-		return functions;
+		ArrayList<IndividualWrapper> temp = new ArrayList<>();
+		for(IndividualWrapper iw : functions)
+			temp.add(iw);
+		return temp;
 	}
 	
 	public String toString() {

@@ -96,11 +96,17 @@ public class WorkOrder {
 	}
 	
 	public ArrayList<IndividualWrapper> getProcessCapabilities() {
-		return process_capabilities;
+		ArrayList<IndividualWrapper> temp = new ArrayList<>();
+		for(IndividualWrapper iw : process_capabilities)
+			temp.add(iw);
+		return temp;
 	}
 	
 	public ArrayList<String> getConcepts() {
-		return concepts;
+		ArrayList<String> temp = new ArrayList<>();
+		for(String s : concepts)
+			temp.add(s);
+		return temp;
 	}
 	
 	public void setPartName(String part_name) {

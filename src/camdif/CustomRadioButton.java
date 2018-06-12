@@ -56,7 +56,10 @@ public class CustomRadioButton extends JRadioButton {
 	}
 	
 	public ArrayList<String> getChain() {
-		return chain;
+		ArrayList<String> temp = new ArrayList<>();
+		for(String s : chain)
+			temp.add(s);
+		return temp;
 	}
 	
 	public int getConceptCount() {
