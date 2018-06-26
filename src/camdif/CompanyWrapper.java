@@ -1,6 +1,8 @@
 package camdif;
 
-public class CompanyWrapper {
+import java.io.Serializable;
+
+public class CompanyWrapper implements Serializable {
 
 	private Company company;
 	private String save_name;

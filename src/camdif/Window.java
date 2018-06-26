@@ -30,7 +30,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,7 +54,6 @@ import java.awt.Insets;
 import java.awt.RenderingHints;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -62,7 +64,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import org.apache.jena.iri.IRI;
 import org.apache.jena.ontology.Individual;
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntDocumentManager;
@@ -70,7 +71,6 @@ import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.ontology.OntResource;
 import org.apache.jena.ontology.OntTools;
-import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
@@ -79,9 +79,6 @@ import org.apache.jena.rdf.model.RDFWriter;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.reasoner.Reasoner;
-import org.apache.jena.reasoner.ValidityReport;
-import org.apache.jena.riot.system.IRIResolver;
 import org.apache.jena.util.FileManager;
 import org.apache.jena.util.iterator.ExtendedIterator;
 import org.apache.jena.vocabulary.RDFS;
@@ -203,9 +200,9 @@ public class Window extends JFrame {
 	private static int opt_flag = 0;
 	
 	// general
-	private static String version = "1.25.0";
+	private static String version = "1.26.0";
 	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM;
-	private static OntModel ontology;
+	public static OntModel ontology;
 	private static OntModel demo_factory;
 	private static OntModel demo_work_order;
 	
@@ -885,7 +882,9 @@ public class Window extends JFrame {
 			if(components[i] instanceof JTextField && export && from_flag == 2)
 				((JTextField)components[i]).setText(work_order.getPartName().replaceAll(" ","") + "-WO.owl");
 			if(components[i] instanceof JTextField && export && from_flag == 3)
-				((JTextField)components[i]).setText("SupplyChain1.owl");
+				((JTextField)components[i]).setText("SupplyChain.owl");
+			if(components[i] instanceof JTextField && export && from_flag == 4)
+				((JTextField)components[i]).setText("Session.cmdf");
 			if(components[i] instanceof JScrollPane)
 			{
 				JScrollPane jscroll = (JScrollPane)components[i];
@@ -1867,7 +1866,7 @@ public class Window extends JFrame {
             }
         });
 		
-		JButton btnList = new JButton("List Models");
+		JButton btnList = new JButton("Models");
 		btnList.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnList = new GridBagConstraints();
 		gbc_btnList.fill = GridBagConstraints.HORIZONTAL;
@@ -2016,6 +2015,7 @@ public class Window extends JFrame {
 										}
 									}
 				                	saved_factories.add(new OntModelWrapper(exp, name_save));
+				                	in.close();
 								} catch(Exception e1) {
 									f = 1;
 									System.out.println(e1);
@@ -7536,7 +7536,7 @@ public class Window extends JFrame {
 									OntDocumentManager model_dm = model.getDocumentManager();
 									model_dm.addAltEntry("http://infoneer.txstate.edu/ontology/MSDL.owl", "file:information/MSDL.owl");
 									model.read(in, "RDF/XML");
-									setImportedInfo(model, 2);	
+									setImportedInfo(model, 2);
 									String name_save = work_order.getPartName() + " Work Order";
 									OntModel exp = generateFinalExport(2, false, "", "", "", "", "", "", "", "", "", "", "", "", "", "", work_order.getConcepts());
 									for(int x = 0; x < saved_work_orders.size(); x++) {
@@ -7546,6 +7546,7 @@ public class Window extends JFrame {
 										}
 									}
 				                	saved_work_orders.add(new OntModelWrapper(exp, name_save));
+				                	in.close();
 								} catch(Exception e1) {
 									f = 1;
 									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
@@ -9543,19 +9544,104 @@ public class Window extends JFrame {
 		getContentPane().add(panel, BorderLayout.CENTER);
 		GridBagLayout gbl_panel = new GridBagLayout();
 		gbl_panel.columnWidths = new int[]{0, 0};
-		gbl_panel.rowHeights = new int[]{0, 0, 0, 0};
+		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0};
 		gbl_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel.setLayout(gbl_panel);
+		
+		JButton btnComp = new JButton("List Company Models");
+		btnComp.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnComp = new GridBagConstraints();
+		gbc_btnComp.weightx = 1.0;
+		gbc_btnComp.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnComp.insets = new Insets(105, 225, 10, 225);
+		gbc_btnComp.gridx = 0;
+		gbc_btnComp.gridy = 0;
+		panel.add(btnComp, gbc_btnComp);
+		btnComp.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                
+            	EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	JPanel save_panel = new JPanel();
+						GridBagLayout gbl_save_panel = new GridBagLayout();
+						gbl_save_panel.columnWidths = new int[]{345, 0};
+						gbl_save_panel.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+						gbl_save_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+						save_panel.setLayout(gbl_save_panel);
+				    	
+				    	JPanel list_panel = new JPanel();
+						list_panel.setLayout(new BorderLayout(0, 0));
+						list_panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, etched_color1, etched_color2));
+						list_panel.setBackground(Color.WHITE);
+
+						DefaultListModel<CompanyWrapper> list_model_save = new DefaultListModel<>();
+						for(CompanyWrapper cw : saved_companies) {
+							list_model_save.addElement(cw);
+						}
+						
+						JList<CompanyWrapper> list_save = new JList<>(list_model_save);
+						list_save.setFont(new Font("Arial", Font.PLAIN, 12));
+						list_save.setVisibleRowCount(6);
+						list_save.setFocusable(false);
+						list_save.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+						list_panel.add(list_save, BorderLayout.CENTER);
+				    	
+						JScrollPane scrollPane_save = new JScrollPane(list_save);
+				    	scrollPane_save.setBorder(BorderFactory.createEmptyBorder());
+				    	scrollPane_save.getVerticalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getHorizontalScrollBar().setUnitIncrement(10);
+				    	scrollPane_save.getVerticalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.getHorizontalScrollBar().setUI(new ScrollUI(Color.WHITE));
+				    	scrollPane_save.setOpaque(false);
+						list_panel.add(scrollPane_save);
+						
+						GridBagConstraints gbc_list_panel = new GridBagConstraints();
+						gbc_list_panel.insets = new Insets(0, 0, 8, 0);
+						gbc_list_panel.fill = GridBagConstraints.BOTH;
+						gbc_list_panel.gridx = 0;
+						gbc_list_panel.gridy = 0;
+						save_panel.add(list_panel, gbc_list_panel);
+						
+						JButton btnDelete = new JButton("Delete");
+						btnDelete.setFont(new Font("Arial", Font.PLAIN, 12));
+						GridBagConstraints gbc_btnDelete = new GridBagConstraints();
+						gbc_btnDelete.fill = GridBagConstraints.HORIZONTAL;
+						gbc_btnDelete.insets = new Insets(5, 140, 0, 140);
+						gbc_btnDelete.gridx = 0;
+						gbc_btnDelete.gridy = 1;
+						save_panel.add(btnDelete, gbc_btnDelete);
+						btnDelete.addActionListener(new ActionListener() {
+				            public void actionPerformed(ActionEvent e) {
+				            	if(list_save.getSelectedValue() != null) {
+				            		CompanyWrapper deleted = list_save.getSelectedValue();
+					            	for(int x = 0; x < saved_companies.size(); ++x) {
+										if(saved_companies.get(x).toString().toLowerCase().equals(deleted.toString().toLowerCase())) {
+											saved_companies.remove(x);
+											list_model_save.removeElementAt(x);
+											break;
+										}
+									}
+				            	}
+				            }
+				        });
+				    	
+				    	JOptionPane.showOptionDialog(frame, save_panel, "Company Models", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Close"}, null);
+				    }
+				});
+            	
+            }
+        });
 		
 		JButton btnFact = new JButton("List Factory Models");
 		btnFact.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnFact = new GridBagConstraints();
 		gbc_btnFact.weightx = 1.0;
 		gbc_btnFact.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnFact.insets = new Insets(105, 225, 10, 225);
+		gbc_btnFact.insets = new Insets(0, 225, 10, 225);
 		gbc_btnFact.gridx = 0;
-		gbc_btnFact.gridy = 0;
+		gbc_btnFact.gridy = 1;
 		panel.add(btnFact, gbc_btnFact);
 		btnFact.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -9639,7 +9725,7 @@ public class Window extends JFrame {
 		gbc_btnCap.insets = new Insets(0, 225, 10, 225);
 		gbc_btnCap.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnCap.gridx = 0;
-		gbc_btnCap.gridy = 1;
+		gbc_btnCap.gridy = 2;
 		panel.add(btnCap, gbc_btnCap);
 		btnCap.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -9724,7 +9810,7 @@ public class Window extends JFrame {
 		gbc_btnWork.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnWork.insets = new Insets(0, 225, 10, 225);
 		gbc_btnWork.gridx = 0;
-		gbc_btnWork.gridy = 2;
+		gbc_btnWork.gridy = 3;
 		panel.add(btnWork, gbc_btnWork);
 		btnWork.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -9802,13 +9888,183 @@ public class Window extends JFrame {
             }
         });
 		
+		JButton btnLoad = new JButton("Import Session");
+		btnLoad.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnLoad = new GridBagConstraints();
+		gbc_btnLoad.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnLoad.weightx = 1.0;
+		gbc_btnLoad.insets = new Insets(15, 225, 5, 225);
+		gbc_btnLoad.gridx = 0;
+		gbc_btnLoad.gridy = 4;
+		panel.add(btnLoad, gbc_btnLoad);
+		btnLoad.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                
+            	EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+						fc = new JFileChooser("Desktop") {
+							@Override
+						    public void approveSelection() {
+						        File f = getSelectedFile();
+						        if(f.exists()) {
+						        	super.approveSelection();
+						        }
+						    }
+						};
+						
+						FileNameExtensionFilter filter = new FileNameExtensionFilter("CaMDiF Session (*.cmdf)", "cmdf");
+						fc.setFileFilter(filter);
+						fc.setFocusable(false);
+						fc.setDialogTitle("Import Session");
+						fc.setMultiSelectionEnabled(false);
+						if(import_path.equals("\\"))
+							import_path = export_path;
+						fc.setCurrentDirectory(new File(import_path));
+						JComboBox open_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
+						open_combo.setFont(new Font("Arial", Font.PLAIN, 12));
+						open_combo.setUI(new ComboUI(open_combo, true, tab_color1));
+						open_combo.setBorder(new LineBorder(Color.GRAY));
+						open_combo.setBackground(Color.WHITE);
+						configureFileChooserUI(fc.getComponents(), false, 0);
+						
+						result = fc.showOpenDialog(frame);
+						if(result == 0)
+						{
+							File selected_file = fc.getSelectedFile();
+							if(selected_file.exists())
+							{
+								try {
+									import_path = selected_file.getCanonicalPath();
+									InputStream in = FileManager.get().open("file:///" + import_path.replace("\\", "/"));
+									if(in == null)
+							            throw new IllegalArgumentException();
+									ObjectInputStream ois = new ObjectInputStream(in);
+									ArrayList<ArrayList> models = (ArrayList)ois.readObject();
+									
+									ArrayList<CompanyWrapper> comp = models.get(0);
+									saved_companies.clear();
+									for(CompanyWrapper cw : comp)
+										saved_companies.add(cw);
+									
+									ArrayList<OntModelWrapper> fact = models.get(1);
+									saved_factories.clear();
+									for(OntModelWrapper omw : fact)
+										saved_factories.add(omw);
+									
+									ArrayList<MatchData> cap = models.get(2);
+									saved_match_data.clear();
+									for(MatchData md :cap)
+										saved_match_data.add(md);
+									
+									ArrayList<OntModelWrapper> work = models.get(3);
+									saved_work_orders.clear();
+									for(OntModelWrapper omw : work)
+										saved_work_orders.add(omw);
+									in.close();
+								} catch(Exception e1) {
+									e1.printStackTrace(System.out);
+									JOptionPane.showMessageDialog(frame, new JLabel("Unable to import.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+								}
+							}
+						}
+				    }
+				});
+            	
+            }
+        });
+		
+		JButton btnSave = new JButton("Export Session");
+		btnSave.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_btnSave = new GridBagConstraints();
+		gbc_btnSave.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnSave.weightx = 1.0;
+		gbc_btnSave.insets = new Insets(5, 225, 10, 225);
+		gbc_btnSave.gridx = 0;
+		gbc_btnSave.gridy = 5;
+		panel.add(btnSave, gbc_btnSave);
+		btnSave.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                
+            	EventQueue.invokeLater(new Runnable() {
+				    @Override
+				    public void run() {
+				    	fc = new JFileChooser("Desktop") {
+							@Override
+						    public void approveSelection() {
+						        File f = getSelectedFile();
+						        if(f.exists() && getDialogType() == SAVE_DIALOG) {
+						            result = JOptionPane.showConfirmDialog(this, "File already exists. Overwrite?", "Confirm", JOptionPane.YES_NO_CANCEL_OPTION);
+						            switch(result) {
+						                case JOptionPane.YES_OPTION:
+						                    super.approveSelection();
+						                    return;
+						                case JOptionPane.NO_OPTION:
+						                    return;
+						                case JOptionPane.CLOSED_OPTION:
+						                    return;
+						                case JOptionPane.CANCEL_OPTION:
+						                    cancelSelection();
+						                    return;
+						            }
+						        }
+						        super.approveSelection();
+						    }
+						};
+						
+						FileNameExtensionFilter filter = new FileNameExtensionFilter("CaMDiF Session (*.cmdf)", "cmdf");
+						fc.setFileFilter(filter);
+						fc.setFocusable(false);
+						fc.setDialogTitle("Export Session");
+						fc.setMultiSelectionEnabled(false);
+						if(export_path.equals("\\"))
+							export_path = import_path;
+						fc.setCurrentDirectory(new File(export_path));
+						JComboBox save_combo = (JComboBox)(fc.getComponent(0).getAccessibleContext().getAccessibleChild(2));
+						save_combo.setFont(new Font("Arial", Font.PLAIN, 12));
+						save_combo.setUI(new ComboUI(save_combo, true, tab_color1));
+						save_combo.setBorder(new LineBorder(Color.GRAY));
+						save_combo.setBackground(Color.WHITE);
+						configureFileChooserUI(fc.getComponents(), true, 4);
+						
+						result = fc.showSaveDialog(frame);	
+						if(result == 0)
+						{
+							try {
+								File selected_file = fc.getSelectedFile();
+								String selected_file_path = selected_file.getCanonicalPath();
+								if(selected_file_path.length() < 5 || !(selected_file_path.substring(selected_file_path.length() - 5, selected_file_path.length()).equals(".cmdf")))
+									selected_file = new File(selected_file_path + ".cmdf");
+								selected_file.createNewFile();
+								export_path = selected_file.getCanonicalPath();
+								FileOutputStream fos = new FileOutputStream(selected_file, false);
+								ObjectOutputStream oos = new ObjectOutputStream(fos);
+								ArrayList<ArrayList> models = new ArrayList<>();
+								models.add(saved_companies);
+								models.add(saved_factories);
+								models.add(saved_match_data);
+								models.add(saved_work_orders);
+								oos.writeObject(models);
+								oos.close();
+								fos.close();
+							} catch(Exception e1) {
+								JOptionPane.showMessageDialog(frame, new JLabel("Unable to export.", SwingConstants.CENTER), "Notice", JOptionPane.PLAIN_MESSAGE, null);
+								e1.printStackTrace(System.out);
+							}
+						}
+				    }
+				});
+            	
+            }
+        });
+		
 		JButton btnBack = new JButton("Back");
 		btnBack.setFont(new Font("Arial", Font.PLAIN, 15));
 		GridBagConstraints gbc_btnBack = new GridBagConstraints();
 		gbc_btnBack.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnBack.insets = new Insets(-270, 290, 0, 290);
+		gbc_btnBack.insets = new Insets(-152, 290, 0, 290);
 		gbc_btnBack.gridx = 0;
-		gbc_btnBack.gridy = 4;
+		gbc_btnBack.gridy = 6;
 		panel.add(btnBack, gbc_btnBack);
 		btnBack.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

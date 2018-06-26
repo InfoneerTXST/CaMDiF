@@ -1,8 +1,18 @@
 package camdif;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.ArrayList;
 
-public class MatchData {
+import org.apache.jena.ontology.OntDocumentManager;
+import org.apache.jena.ontology.OntModelSpec;
+import org.apache.jena.rdf.model.ModelFactory;
+
+public class MatchData implements Serializable {
 
 	private String save_name;
 	private String upper_capacity;
@@ -18,6 +28,24 @@ public class MatchData {
 	private ArrayList<String> concepts;
 	private ArrayList<IndividualWrapper> materials;
 	private ArrayList<IndividualWrapper> functions;
+	
+	public MatchData() {
+		save_name = "";
+		upper_capacity = "";
+		lower_tolerance = "";
+		upper_tolerance = "";
+		upper_length = "";
+		upper_diameter = "";
+		lower_surface = "";
+		upper_surface = "";
+		lower_thickness = "";
+		upper_thickness = "";
+		upper_weight = "";
+
+		concepts = new ArrayList<>();
+		materials = new ArrayList<>();
+		functions = new ArrayList<>();
+	}
 	
 	public MatchData(String save_name, String upper_capacity, String lower_tolerance, String upper_tolerance, String upper_length,
 			String upper_diameter, String lower_surface, String upper_surface, String lower_thickness, String upper_thickness,
