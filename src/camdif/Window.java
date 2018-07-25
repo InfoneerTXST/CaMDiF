@@ -200,7 +200,7 @@ public class Window extends JFrame {
 	private static int opt_flag = 0;
 	
 	// general
-	private static String version = "1.26.0";
+	private static String version = "1.27.0";
 	private static OntModelSpec modelSpec = OntModelSpec.OWL_MEM;
 	public static OntModel ontology;
 	private static OntModel demo_factory;
@@ -317,12 +317,14 @@ public class Window extends JFrame {
 		
 	}
 	
+	// initialize loading window
 	private Window() {
 		super();
 		setLocationRelativeTo(null);
 		loadPage();
 	}
 	
+	// initialize main window
 	private Window(String frame_title) {
 		super(frame_title);
 		
@@ -476,6 +478,7 @@ public class Window extends JFrame {
 		menuPage();
 	}
 	
+	// load external resources and GUI
 	private void loadPage() {
 		SwingWorker<?,?> worker = new SwingWorker<Void,Void>() {
 			@Override
@@ -642,6 +645,7 @@ public class Window extends JFrame {
 		return c;
 	}
 	
+	// get supply chain from master indexes
 	ArrayList<MatchData> getChainFromIndexes(int[] index_list) {
 	    ArrayList<MatchData> chain = new ArrayList<>(); 
 	    for(int i = 0; i < index_list.length; ++i)
@@ -649,6 +653,7 @@ public class Window extends JFrame {
 	    return chain;
 	}
 	
+	// get next sequential export/import ID for outermost individuals
 	private String generateID(OntModel model) {
 		String ID_prefix = "http://infoneer.txstate.edu/ontology/MSDL_";
 		String ID;
@@ -664,6 +669,7 @@ public class Window extends JFrame {
 		return ID;
 	}
 	
+	// refresh list of 3d printers on build page
 	private void refresh_3d() {
 		for(int i = 0; i < equipment_individuals.size(); i++) {
 			if(equipment_individuals.get(i).getCategoryClass().equals(class_3DPrinter)) {
@@ -679,6 +685,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
+	// refresh list of machines on build page
 	private void refresh_machine() {
 		for(int i = 0; i < equipment_individuals.size(); i++) {
 			if(equipment_individuals.get(i).getCategoryClass().equals(class_MachineTool)) {
@@ -694,6 +701,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
+	// refresh list of industries on build page
 	private void refresh_industry() {
 		for(int i = 0; i < capability_individuals.size(); i++) {
 			if(capability_individuals.get(i).getCategoryClass().equals(class_Industry)) {
@@ -709,6 +717,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
+	// refresh list of materials on build page
 	private void refresh_material() {
 		for(int i = 0; i < capability_individuals.size(); i++) {
 			if(capability_individuals.get(i).getCategoryClass().equals(class_Material)) {
@@ -724,6 +733,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
+	// refresh list of software on build page
 	private void refresh_software() {
 		for(int i = 0; i < capability_individuals.size(); i++) {
 			if(capability_individuals.get(i).getCategoryClass().equals(class_Software)) {
@@ -739,6 +749,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
+	// refresh list of skills on build page
 	private void refresh_skill() {
 		for(int i = 0; i < capability_individuals.size(); i++) {
 			if(capability_individuals.get(i).getCategoryClass().equals(class_Skill)) {
@@ -754,6 +765,7 @@ public class Window extends JFrame {
 	    }
 	}
 	
+	// refresh all lists on build page
 	private boolean refreshList(boolean first_page, OntClass added) {
 		any = false;
 		b_3d = false;
@@ -832,6 +844,7 @@ public class Window extends JFrame {
 		return r;
 	}
 	
+	// account for intersections and unions so that subclasses/superclasses can be checked
 	private OntClass accountRestrictions(OntClass c) {
 		if(c.isIntersectionClass()) {
 			for(ExtendedIterator<?> i = c.asIntersectionClass().listOperands(); i.hasNext(); ) {
@@ -854,6 +867,7 @@ public class Window extends JFrame {
 		return c;
 	}
 	
+	// check if an OntClass is a subclass of another OntClass (regardless of depth)
 	private boolean isCategoryOf(OntClass child, OntClass category, boolean check_equal) {
 		if(OntTools.findShortestPath(child.getOntModel(), child, category, new OntTools.PredicatesFilter(RDFS.subClassOf)) != null || (check_equal && child.equals(category)))
 			return true;
@@ -865,6 +879,7 @@ public class Window extends JFrame {
 		return false;
 	}
 	
+	// configure the GUI of a JFileChooser
 	private void configureFileChooserUI(Component[] components, boolean export, int from_flag) {
 		for(int i = 0; i < components.length; i++)
 		{
@@ -918,6 +933,7 @@ public class Window extends JFrame {
 		}
 	}
 	
+	// apply all information obtained from an imported OntModel
 	private void setImportedInfo(OntModel model, int from_flag) {
 		equipment_individuals = new ArrayList<ListNode>();
 		capability_individuals = new ArrayList<ListNode>();
@@ -1207,6 +1223,7 @@ public class Window extends JFrame {
 		}
 	}
 	
+	// configure an image to be shown in a separate window
 	private Image getScaledImage(Image srcImg, int w, int h) {
 	    BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
 	    Graphics2D g2 = resizedImg.createGraphics();
@@ -1216,6 +1233,7 @@ public class Window extends JFrame {
 	    return resizedImg;
 	}
 	
+	// get the preferred label of the top concept of a node in the manufacturing thesaurus
 	private String getTopConceptName(JsonNode rootNode, JsonNode j) {
 		if(j.get("http://www.w3.org/2004/02/skos/core#broader") != null)
 			return getTopConceptName(rootNode, rootNode.get(j.get("http://www.w3.org/2004/02/skos/core#broader").get(0).get("value").asText()));
@@ -1227,6 +1245,7 @@ public class Window extends JFrame {
 		return "";
 	}
 	
+	// get the name of a web host from a url
 	private static String getHostName(String url) {
 		if(url == null || url.length() == 0)
 			return "";
@@ -1247,6 +1266,7 @@ public class Window extends JFrame {
 		return host.startsWith("www.") ? host.substring(4) : host;
 	}
 	
+	// gather all text from a website
 	private String getLinkText(String url, int depth, boolean footer_gotten) {
 		ArrayList<String> visited = new ArrayList<>();
 		visited.add(url.replaceAll("www.", "").replaceAll("https://", "").replaceAll("http://", "").replaceAll("Http://", "").replaceAll("HTTP://", ""));
@@ -1332,6 +1352,7 @@ public class Window extends JFrame {
 		return text;
 	}
 	
+	// carry out entire web crawling process (1. gathering all the text, 2. looking for matches in the text)
 	private Map<JsonNodeWrapper, Integer> crawl(String url, int depth) {
 		link_depths = new LinkedHashMap<>();
 		link_depths.put(url, 0);
@@ -1405,6 +1426,7 @@ public class Window extends JFrame {
 		return matched_concepts_desc;
 	}
 	
+	// put all necessary information into an OntModel to be exported
 	private OntModel generateFinalExport(int from_flag, boolean include_factory_file, String inf_complexity, String inf_variety, String inf_range,
 			String inf_min_tolerance, String inf_max_tolerance, String inf_min_length, String inf_max_length,
 			String inf_min_diameter, String inf_max_diameter, String inf_min_roughness, String inf_max_roughness,
@@ -1808,6 +1830,7 @@ public class Window extends JFrame {
 		return exp;
 	}
 	
+	// page showing program menu
 	private void menuPage() {
 		getContentPane().removeAll();
 		
@@ -1906,9 +1929,9 @@ public class Window extends JFrame {
 		panel.add(btnAbout, gbc_btnAbout);
 		btnAbout.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	String about_info = "<html>CaMDiF<br>Version " + version + "<br><br>About - CaMDiF is developed by the Engineering Informatics Research group (Infoneer) at<br>Texas State University."
+            	String about_info = "<html><b>CaMDiF<br>Version " + version + "<br><br>About</b><br>CaMDiF is developed by the Engineering Informatics Research group (Infoneer) at<br>Texas State University."
             			+ " Funding for development of CaMDiF is provided by the Digital Design<br>and Manufacturing Innovation Institute (DMDII) under contract #0220160024."
-            			+ "<br><br>Copyright - This software is licensed under a Creative Commons Attribution 4.0 International<br>License CC BY-NC-Nd-4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/), with the<br>exception of DMDII members.<br><br></html>";
+            			+ "<br><br><b>Copyright © 2018, Texas State University</b><br>This software and associated documentation files (the \"Software\") is subject to the terms of<br>the DMDII Membership Agreement (the \"Membership Agreement\") and is hereby licensed to<br>Members in Good Standing (as defined under the Membership Agreement) in accordance<br>with such Member’s membership tier and rights granted to Members at such membership<br>tier as set forth in the Membership Agreement.<br><br></html>";
             	JOptionPane.showMessageDialog(frame, new JLabel(about_info, SwingConstants.CENTER), "About", JOptionPane.PLAIN_MESSAGE, null);
             }
         });
@@ -1925,6 +1948,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page showing build menu
 	private void buildPage1() {
 		getContentPane().removeAll();
 		
@@ -2151,6 +2175,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page for filling out company information
 	private void companyPage(boolean from_build) {
 		getContentPane().removeAll();
 		
@@ -2758,6 +2783,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page in build section showing added entities
 	private void buildPage2(boolean first_page) {
 		getContentPane().removeAll();
 		
@@ -4435,6 +4461,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page showing analyze menu
 	private void analyzePage1() {
 		getContentPane().removeAll();
 		
@@ -4740,6 +4767,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page showing analysis information of selected factory
 	private void analyzePage2() {
 		getContentPane().removeAll();
 		
@@ -6416,6 +6444,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page showing comparative analysis information between two selected factories
 	private void analyzePage3(OntModelWrapper omw1, OntModelWrapper omw2) {
 		getContentPane().removeAll();
 		
@@ -6964,6 +6993,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page for checking what capability models pass selected capability filters
 	private void analyzePage4() {
 		getContentPane().removeAll();
 		
@@ -7446,6 +7476,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page showing match menu
 	private void matchPage1() {
 		getContentPane().removeAll();
 		
@@ -7763,6 +7794,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page for filling out work order information
 	private void matchPage2() {
 		getContentPane().removeAll();
 		
@@ -8298,6 +8330,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page for adding optional thesaurus concepts to the work order
 	private void matchPage3() {
 		getContentPane().removeAll();
 
@@ -8938,6 +8971,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page for generating supply chains that match the work order
 	private void matchPage4(boolean back_flag) {
 		getContentPane().removeAll();
 		
@@ -9223,7 +9257,7 @@ public class Window extends JFrame {
                 	    }
             		}
             	}
-            	System.out.println(available_subsets);
+            	//System.out.println(available_subsets);
             	
             	for(int x = 0; ; ++x) {
             		if(x >= available_subsets.size())
@@ -9537,6 +9571,7 @@ public class Window extends JFrame {
 		validate();
 	}
 	
+	// page showing menu for managing models
 	private void listPage() {
 		getContentPane().removeAll();
 		
