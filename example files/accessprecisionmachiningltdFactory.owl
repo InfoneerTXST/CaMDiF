@@ -1,0 +1,121 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <j.1:MSDL_0000149>
+      <j.1:MSDL_0000878>
+        <rdfs:label xml:lang="en">access precision machining ltd</rdfs:label>
+      </j.1:MSDL_0000878>
+    </j.1:MSDL_0000149>
+    <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+    <rdfs:comment xml:lang="en">
+----- access precision machining ltd company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: access precision machining ltd
+Year founded: 1960
+Web address: http://www.accessprecision.com/
+State address: British Columbia
+Zip address: V1E 1X9
+Operates: access precision machining ltd factory
+</rdfs:comment>
+    <j.1:MSDL_0000876>
+      <j.1:MSDL_0000864>
+        <rdfs:label xml:lang="en">http://www.accessprecision.com/</rdfs:label>
+      </j.1:MSDL_0000864>
+    </j.1:MSDL_0000876>
+    <rdfs:label xml:lang="en">access precision machining ltd</rdfs:label>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000839>
+        <rdfs:label xml:lang="en">V1E 1X9</rdfs:label>
+      </j.1:MSDL_0000839>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0000679>
+      <j.1:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000795"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV-200-VerticalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV5Face-60-160-VerticalMill"/>
+        <rdfs:comment xml:lang="en">
+----- access precision machining ltd factory information -----
+Equipment: Mazak-FJV-200-VerticalMill
+Equipment: Mazak-FJV5Face-60-160-VerticalMill
+Equipment: Mazak-FJV5Face-60-80-VerticalMill
+Equipment: Generic Mazak VM
+Equipment: Mazak-FJV-100-160-VerticalMill
+Equipment: Mazak-FJV53560VerticalMill
+Industry: oil and gas
+Industry: aerospace
+Material: stainless steel capability
+Material: die steel capability
+Skill (very low): generic machine repair skill
+Skill (high): generic manual milling skill
+Skill (medium): generic cnc machining skill
+</rdfs:comment>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV5Face-60-80-VerticalMill"/>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001058>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Very low</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic machine repair skill</rdfs:label>
+              </j.1:MSDL_0001058>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Generic-Mazak-vertical-mill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV-100-160-VerticalMill"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000790"/>
+        <rdfs:label xml:lang="en">access precision machining ltd factory</rdfs:label>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001047>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Medium</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic cnc machining skill</rdfs:label>
+              </j.1:MSDL_0001047>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001051>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>High</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic manual milling skill</rdfs:label>
+              </j.1:MSDL_0001051>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000388"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/stainless_steel_capability"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/die_steel_capability"/>
+      </j.1:MSDL_0000090>
+    </j.1:MSDL_0000679>
+    <j.1:MSDL_0001081>
+      <j.1:MSDL_0001082>
+        <rdfs:label xml:lang="en">1960</rdfs:label>
+      </j.1:MSDL_0001082>
+    </j.1:MSDL_0001081>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000841>
+        <rdfs:label xml:lang="en">British Columbia</rdfs:label>
+      </j.1:MSDL_0000841>
+    </j.1:MSDL_0000875>
+  </j.1:MSDL_0000873>
+</rdf:RDF>

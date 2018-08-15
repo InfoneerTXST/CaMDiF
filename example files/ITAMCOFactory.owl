@@ -1,0 +1,163 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <rdfs:label xml:lang="en">ITAMCO</rdfs:label>
+    <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+    <rdfs:comment xml:lang="en">
+----- ITAMCO company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: ITAMCO
+Year founded: 1955
+Web address: www.itamco.com
+Street address: 6100 Michigan Rd
+City address: Plymouth
+State address: IN
+Zip address: 46563
+Operates: ITAMCO factory
+</rdfs:comment>
+    <j.1:MSDL_0000876>
+      <j.1:MSDL_0000864>
+        <rdfs:label xml:lang="en">www.itamco.com</rdfs:label>
+      </j.1:MSDL_0000864>
+    </j.1:MSDL_0000876>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000838>
+        <rdfs:label xml:lang="en">Plymouth</rdfs:label>
+      </j.1:MSDL_0000838>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0000679>
+      <j.1:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-IntegrexI-150-Multi"/>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001045>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Very high</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic tool design skill</rdfs:label>
+              </j.1:MSDL_0001045>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000748"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-EC400-HorizontalMill"/>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001039>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>High</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic CAD skill</rdfs:label>
+              </j.1:MSDL_0001039>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000792"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV5Face-60-160-VerticalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-VF3-VerticalMill"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/aluminum_capability"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Toshiba-BMC100E-HorizontalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/OkumaMC-600H-HorizontalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-VF-3SS-VerticalMill"/>
+        <rdfs:comment xml:lang="en">
+----- ITAMCO factory information -----
+Equipment: Okuma MC-600H-HorizontalMill
+Equipment: Okuma-MC-80H-HorizontalMill
+Equipment: Okuma MC-50H-HorizontalMill
+Equipment: Toshiba-BMC100E-HorizontalMill
+Equipment: Haas-TM-1-VerticalMill
+Equipment: Mazak-Integrex I-150-Multi
+Equipment: Mazak-FJV-100-160-VerticalMill
+Equipment: Mazak-FJV535120VerticalMill
+Equipment: Mazak-FJV5Face-60-160-VerticalMill
+Equipment: Haas-EC400-HorizontalMill
+Equipment: Haas-VF3-VerticalMill
+Equipment: Haas-VF5-40-VerticalMill
+Equipment: Haas-VF-3SS-VerticalMill
+Equipment: 3DSYSTEMS-SPRO230
+Industry: mining
+Industry: energy
+Industry: automotive
+Material: bronze capability
+Material: stainless steel capability
+Material: aluminum capability
+Software: Creo
+Software: Solid Edge
+Software: AutoCAD
+Software: ANSYS
+Software: Mastercam
+Skill (medium): generic cnc machining skill
+Skill (very high): generic tool design skill
+Skill (high): generic CAD skill
+</rdfs:comment>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000779"/>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000787"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000791"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Okuma-MC-80H-HorizontalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000354"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-TM-1-VerticalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV-100-160-VerticalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/OkumaMC-50H-HorizontalMill"/>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000775"/>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000782"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000797"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/stainless_steel_capability"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/bronze_capability"/>
+        <rdfs:label xml:lang="en">ITAMCO factory</rdfs:label>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001047>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Medium</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic cnc machining skill</rdfs:label>
+              </j.1:MSDL_0001047>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-VF5-40-VerticalMill"/>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000783"/>
+      </j.1:MSDL_0000090>
+    </j.1:MSDL_0000679>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000840>
+        <rdfs:label xml:lang="en">6100 Michigan Rd</rdfs:label>
+      </j.1:MSDL_0000840>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000839>
+        <rdfs:label xml:lang="en">46563</rdfs:label>
+      </j.1:MSDL_0000839>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0001081>
+      <j.1:MSDL_0001082>
+        <rdfs:label xml:lang="en">1955</rdfs:label>
+      </j.1:MSDL_0001082>
+    </j.1:MSDL_0001081>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000841>
+        <rdfs:label xml:lang="en">IN</rdfs:label>
+      </j.1:MSDL_0000841>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0000149>
+      <j.1:MSDL_0000878>
+        <rdfs:label xml:lang="en">ITAMCO</rdfs:label>
+      </j.1:MSDL_0000878>
+    </j.1:MSDL_0000149>
+  </j.1:MSDL_0000873>
+</rdf:RDF>

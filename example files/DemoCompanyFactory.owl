@@ -1,0 +1,82 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000868"/>
+    <rdfs:comment xml:lang="en">
+----- Demo Company company information -----
+Business type: Small business manufacturing company
+Company type: Original design manufacturer
+Name: Demo Company
+Employee count: 20
+Year founded: 2015
+Web address: www.owensind.com/MachineShop/AustinTexas
+Street address: 123 Post Rd.
+City address: Austin
+State address: Tx
+Zip address: 78745
+Operates: Demo Company factory
+</rdfs:comment>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000840>
+        <rdfs:label xml:lang="en">123 Post Rd.</rdfs:label>
+      </j.1:MSDL_0000840>
+    </j.1:MSDL_0000875>
+    <rdfs:label xml:lang="en">Demo Company</rdfs:label>
+    <j.1:MSDL_0000149>
+      <j.1:MSDL_0000878>
+        <rdfs:label xml:lang="en">Demo Company</rdfs:label>
+      </j.1:MSDL_0000878>
+    </j.1:MSDL_0000149>
+    <j.1:MSDL_0000679>
+      <j.1:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <rdfs:comment xml:lang="en">
+----- Demo Company factory information -----
+Equipment: Bulova-BT-360D-VerticalMill
+Material: aluminum capability
+</rdfs:comment>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/aluminum_capability"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Bulova-BT-360D-VerticalMill"/>
+        <rdfs:label xml:lang="en">Demo Company factory</rdfs:label>
+      </j.1:MSDL_0000090>
+    </j.1:MSDL_0000679>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000841>
+        <rdfs:label xml:lang="en">Tx</rdfs:label>
+      </j.1:MSDL_0000841>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0000874>
+      <j.1:MSDL_0000194>
+        <j.0:IAO_0000417>
+          <j.1:MSDL_0000150>
+            <j.0:IAO_0000004>20</j.0:IAO_0000004>
+          </j.1:MSDL_0000150>
+        </j.0:IAO_0000417>
+      </j.1:MSDL_0000194>
+    </j.1:MSDL_0000874>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000838>
+        <rdfs:label xml:lang="en">Austin</rdfs:label>
+      </j.1:MSDL_0000838>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0001081>
+      <j.1:MSDL_0001082>
+        <rdfs:label xml:lang="en">2015</rdfs:label>
+      </j.1:MSDL_0001082>
+    </j.1:MSDL_0001081>
+    <j.1:MSDL_0000876>
+      <j.1:MSDL_0000864>
+        <rdfs:label xml:lang="en">www.owensind.com/MachineShop/AustinTexas</rdfs:label>
+      </j.1:MSDL_0000864>
+    </j.1:MSDL_0000876>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000839>
+        <rdfs:label xml:lang="en">78745</rdfs:label>
+      </j.1:MSDL_0000839>
+    </j.1:MSDL_0000875>
+  </j.1:MSDL_0000873>
+</rdf:RDF>

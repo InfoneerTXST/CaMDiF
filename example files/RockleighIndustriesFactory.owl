@@ -1,0 +1,85 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.0="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.0:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <j.0:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+    <j.0:MSDL_0001081>
+      <j.0:MSDL_0001082>
+        <rdfs:label xml:lang="en">1982</rdfs:label>
+      </j.0:MSDL_0001082>
+    </j.0:MSDL_0001081>
+    <j.0:MSDL_0000875>
+      <j.0:MSDL_0000841>
+        <rdfs:label xml:lang="en">New Jersey</rdfs:label>
+      </j.0:MSDL_0000841>
+    </j.0:MSDL_0000875>
+    <j.0:MSDL_0000876>
+      <j.0:MSDL_0000864>
+        <rdfs:label xml:lang="en">http://www.rockleighindustries.com/</rdfs:label>
+      </j.0:MSDL_0000864>
+    </j.0:MSDL_0000876>
+    <j.0:MSDL_0000875>
+      <j.0:MSDL_0000839>
+        <rdfs:label xml:lang="en">07647</rdfs:label>
+      </j.0:MSDL_0000839>
+    </j.0:MSDL_0000875>
+    <j.0:MSDL_0000679>
+      <j.0:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <rdfs:label xml:lang="en">Rockleigh Industries factory</rdfs:label>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000748"/>
+        <j.0:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000778"/>
+        <j.0:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000793"/>
+        <j.0:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000776"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV5Face-60-120-VerticalMill"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000709"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-UMC-750-VerticalMill"/>
+        <j.0:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/aluminum_capability"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Hyundai-Wia-XF6300-VerticallMill"/>
+        <rdfs:comment xml:lang="en">
+----- Rockleigh Industries factory information -----
+Equipment: 3DSYSTEMS-SPRO230
+Equipment: Mazak-FJV5Face-60-120-VerticalMill
+Equipment: EOS-M280
+Equipment: Haas-UMC-750-VerticalMill
+Equipment: Hyundai-Wia-XF6300-VerticallMill
+Equipment: 3DSYSTEMS-SPRO140
+Equipment: Renishaw-SLM250
+Equipment: Okuma-MB-56VB-VerticalMill
+Equipment: Haas-DM2VerticalMill
+Equipment: EOSINT-P800
+Industry: medical devices
+Material: aluminum capability
+Software: CATIA
+Software: SolidWorks
+Software: SolidCAM
+</rdfs:comment>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000747"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000760"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Okuma-MB-56VB-VerticalMill"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000256"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000731"/>
+        <j.0:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000786"/>
+      </j.0:MSDL_0000090>
+    </j.0:MSDL_0000679>
+    <rdfs:label xml:lang="en">Rockleigh Industries</rdfs:label>
+    <rdfs:comment xml:lang="en">
+----- Rockleigh Industries company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: Rockleigh Industries
+Year founded: 1982
+Web address: http://www.rockleighindustries.com/
+State address: New Jersey
+Zip address: 07647
+Operates: Rockleigh Industries factory
+</rdfs:comment>
+    <j.0:MSDL_0000149>
+      <j.0:MSDL_0000878>
+        <rdfs:label xml:lang="en">Rockleigh Industries</rdfs:label>
+      </j.0:MSDL_0000878>
+    </j.0:MSDL_0000149>
+  </j.0:MSDL_0000873>
+</rdf:RDF>

@@ -1,0 +1,65 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.0="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.0:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <rdfs:comment xml:lang="en">
+----- 3D Machine &amp; Design company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: 3D Machine &amp; Design
+Web address: https://www.3dmachineanddesign.com/
+State address: Utah
+Zip address: 84321
+Operates: 3D Machine &amp; Design factory
+</rdfs:comment>
+    <rdfs:label xml:lang="en">3D Machine &amp; Design</rdfs:label>
+    <j.0:MSDL_0000679>
+      <j.0:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <j.0:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000793"/>
+        <j.0:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000794"/>
+        <j.0:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/Al_2000_series_capability"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV5Face-60-160-VerticalMill"/>
+        <j.0:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/steel_capability"/>
+        <j.0:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000790"/>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000314"/>
+        <rdfs:comment xml:lang="en">
+----- 3D Machine &amp; Design factory information -----
+Equipment: Mazak-FJV5Face-60-160-VerticalMill
+Equipment: Mazak-FJV5100120VerticalMill
+Equipment: Mazak-FJV53560VerticalMill
+Industry: medical devices
+Industry: military
+Industry: aerospace
+Material: Al 2000 series capability
+Material: steel capability
+</rdfs:comment>
+        <j.0:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000388"/>
+        <rdfs:label xml:lang="en">3D Machine &amp; Design factory</rdfs:label>
+      </j.0:MSDL_0000090>
+    </j.0:MSDL_0000679>
+    <j.0:MSDL_0000875>
+      <j.0:MSDL_0000839>
+        <rdfs:label xml:lang="en">84321</rdfs:label>
+      </j.0:MSDL_0000839>
+    </j.0:MSDL_0000875>
+    <j.0:MSDL_0000875>
+      <j.0:MSDL_0000841>
+        <rdfs:label xml:lang="en">Utah</rdfs:label>
+      </j.0:MSDL_0000841>
+    </j.0:MSDL_0000875>
+    <j.0:MSDL_0000876>
+      <j.0:MSDL_0000864>
+        <rdfs:label xml:lang="en">https://www.3dmachineanddesign.com/</rdfs:label>
+      </j.0:MSDL_0000864>
+    </j.0:MSDL_0000876>
+    <j.0:MSDL_0000149>
+      <j.0:MSDL_0000878>
+        <rdfs:label xml:lang="en">3D Machine &amp; Design</rdfs:label>
+      </j.0:MSDL_0000878>
+    </j.0:MSDL_0000149>
+    <j.0:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+  </j.0:MSDL_0000873>
+</rdf:RDF>

@@ -1,0 +1,92 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000839>
+        <rdfs:label xml:lang="en">44306</rdfs:label>
+      </j.1:MSDL_0000839>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0001081>
+      <j.1:MSDL_0001082>
+        <rdfs:label xml:lang="en">1963</rdfs:label>
+      </j.1:MSDL_0001082>
+    </j.1:MSDL_0001081>
+    <j.1:MSDL_0000679>
+      <j.1:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000396"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000748"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Okuma-MB-56VA-VerticalMill"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000793"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/Al_2000_series_capability"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/tool_steel_capability"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Bulova-BT-360D-VerticalMill"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Hyundai-Wia-XF6300-VerticallMill"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000791"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000250"/>
+        <rdfs:comment xml:lang="en">
+----- FM Machine Co factory information -----
+Equipment: Okuma-MB-46VA
+Equipment: 3DSYSTEMS-SPRO230
+Equipment: Okuma-MB-56VA-VerticalMill
+Equipment: Bulova-BT-360D-VerticalMill
+Equipment: Hyundai-Wia-XF6300-VerticallMill
+Equipment: Haas-DM1VerticalMill
+Equipment: Okuma-MB-66VB-VerticalMill
+Equipment: Haas-VF2-VerticalMill
+Industry: medical devices
+Industry: automotive
+Industry: aerospace
+Material: Al 2000 series capability
+Material: tool steel capability
+</rdfs:comment>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000790"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Okuma-MB-66VB-VerticalMill"/>
+        <rdfs:label xml:lang="en">FM Machine Co factory</rdfs:label>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Haas-VF2-VerticalMill"/>
+      </j.1:MSDL_0000090>
+    </j.1:MSDL_0000679>
+    <rdfs:comment xml:lang="en">
+----- FM Machine Co company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: FM Machine Co
+Employee count: 35
+Year founded: 1963
+Web address: http://www.fmmachine.com/index.html
+State address: Ohio
+Zip address: 44306
+Operates: FM Machine Co factory
+</rdfs:comment>
+    <j.1:MSDL_0000874>
+      <j.1:MSDL_0000194>
+        <j.0:IAO_0000417>
+          <j.1:MSDL_0000150>
+            <j.0:IAO_0000004>35</j.0:IAO_0000004>
+          </j.1:MSDL_0000150>
+        </j.0:IAO_0000417>
+      </j.1:MSDL_0000194>
+    </j.1:MSDL_0000874>
+    <rdfs:label xml:lang="en">FM Machine Co</rdfs:label>
+    <j.1:MSDL_0000149>
+      <j.1:MSDL_0000878>
+        <rdfs:label xml:lang="en">FM Machine Co</rdfs:label>
+      </j.1:MSDL_0000878>
+    </j.1:MSDL_0000149>
+    <j.1:MSDL_0000876>
+      <j.1:MSDL_0000864>
+        <rdfs:label xml:lang="en">http://www.fmmachine.com/index.html</rdfs:label>
+      </j.1:MSDL_0000864>
+    </j.1:MSDL_0000876>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000841>
+        <rdfs:label xml:lang="en">Ohio</rdfs:label>
+      </j.1:MSDL_0000841>
+    </j.1:MSDL_0000875>
+  </j.1:MSDL_0000873>
+</rdf:RDF>

@@ -1,0 +1,132 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+    <rdfs:label xml:lang="en">K6 Machine</rdfs:label>
+    <j.1:MSDL_0000874>
+      <j.1:MSDL_0000194>
+        <j.0:IAO_0000417>
+          <j.1:MSDL_0000150>
+            <j.0:IAO_0000004>20</j.0:IAO_0000004>
+          </j.1:MSDL_0000150>
+        </j.0:IAO_0000417>
+      </j.1:MSDL_0000194>
+    </j.1:MSDL_0000874>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000841>
+        <rdfs:label xml:lang="en">Texas</rdfs:label>
+      </j.1:MSDL_0000841>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0001081>
+      <j.1:MSDL_0001082>
+        <rdfs:label xml:lang="en">2001</rdfs:label>
+      </j.1:MSDL_0001082>
+    </j.1:MSDL_0001081>
+    <j.1:MSDL_0000679>
+      <j.1:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000823"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Okuma-MF-46VA-VerticalMill"/>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000778"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000821"/>
+        <j.1:MSDL_0000130>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059 rdf:resource="http://infoneer.txstate.edu/ontology/generic-manual-machining-skill"/>
+          </j.1:MSDL_0001062>
+        </j.1:MSDL_0000130>
+        <rdfs:comment xml:lang="en">
+----- K6 Machine factory information -----
+Equipment: Okuma-MF-46VA-VerticalMill
+Equipment: Okuma-MB-56VB-VerticalMill
+Equipment: Mazak-FJV535120VerticalMill
+Equipment: Hyundai-Wia-XF6300-VerticallMill
+Equipment: Bulova-BT-360D-VerticalMill
+Industry: energy
+Industry: automotive
+Industry: aerospace
+Material: inconel
+Material: aluminum
+Material: stainless steel
+Material: nickel
+Material: carbon steel
+Software: CATIA
+Software: SolidWorks
+Skill (high): generic precision machining skill
+Skill (high): generic manual machining skill
+Skill (high): generic manual milling skill
+Skill (high): generic manual turning skill
+</rdfs:comment>
+        <j.1:MSDL_0000771 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000776"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Bulova-BT-360D-VerticalMill"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000792"/>
+        <j.1:MSDL_0000130>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059 rdf:resource="http://infoneer.txstate.edu/ontology/generic-manual-turning-skill"/>
+          </j.1:MSDL_0001062>
+        </j.1:MSDL_0000130>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Hyundai-Wia-XF6300-VerticallMill"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000791"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000354"/>
+        <j.1:MSDL_0000130>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059 rdf:resource="http://infoneer.txstate.edu/ontology/generic-precision-machining-skill"/>
+          </j.1:MSDL_0001062>
+        </j.1:MSDL_0000130>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000819"/>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000790"/>
+        <rdfs:label xml:lang="en">K6 Machine factory</rdfs:label>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Okuma-MB-56VB-VerticalMill"/>
+        <j.1:MSDL_0000130>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059 rdf:resource="http://infoneer.txstate.edu/ontology/generic-manual-milling-skill"/>
+          </j.1:MSDL_0001062>
+        </j.1:MSDL_0000130>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000833"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000834"/>
+      </j.1:MSDL_0000090>
+    </j.1:MSDL_0000679>
+    <j.1:MSDL_0000876>
+      <j.1:MSDL_0000864>
+        <rdfs:label xml:lang="en">http://www.k6machine.com/</rdfs:label>
+      </j.1:MSDL_0000864>
+    </j.1:MSDL_0000876>
+    <j.1:MSDL_0000149>
+      <j.1:MSDL_0000878>
+        <rdfs:label xml:lang="en">K6 Machine</rdfs:label>
+      </j.1:MSDL_0000878>
+    </j.1:MSDL_0000149>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000839>
+        <rdfs:label xml:lang="en">76531</rdfs:label>
+      </j.1:MSDL_0000839>
+    </j.1:MSDL_0000875>
+    <rdfs:comment xml:lang="en">
+----- K6 Machine company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: K6 Machine
+Employee count: 20
+Year founded: 2001
+Web address: http://www.k6machine.com/
+State address: Texas
+Zip address: 76531
+Operates: K6 Machine factory
+</rdfs:comment>
+  </j.1:MSDL_0000873>
+  <j.1:MSDL_0000926>
+    <j.0:IAO_0000004>High</j.0:IAO_0000004>
+  </j.1:MSDL_0000926>
+  <j.1:MSDL_0000926>
+    <j.0:IAO_0000004>High</j.0:IAO_0000004>
+  </j.1:MSDL_0000926>
+  <j.1:MSDL_0000926>
+    <j.0:IAO_0000004>High</j.0:IAO_0000004>
+  </j.1:MSDL_0000926>
+  <j.1:MSDL_0000926>
+    <j.0:IAO_0000004>High</j.0:IAO_0000004>
+  </j.1:MSDL_0000926>
+</rdf:RDF>

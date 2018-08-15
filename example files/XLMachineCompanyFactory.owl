@@ -1,0 +1,125 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+    <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000839>
+        <rdfs:label xml:lang="en">49072</rdfs:label>
+      </j.1:MSDL_0000839>
+    </j.1:MSDL_0000875>
+    <j.1:MSDL_0001081>
+      <j.1:MSDL_0001082>
+        <rdfs:label xml:lang="en">1976</rdfs:label>
+      </j.1:MSDL_0001082>
+    </j.1:MSDL_0001081>
+    <j.1:MSDL_0000149>
+      <j.1:MSDL_0000878>
+        <rdfs:label xml:lang="en">XL Machine Company</rdfs:label>
+      </j.1:MSDL_0000878>
+    </j.1:MSDL_0000149>
+    <j.1:MSDL_0000876>
+      <j.1:MSDL_0000864>
+        <rdfs:label xml:lang="en">https://www.xlmachine.com/</rdfs:label>
+      </j.1:MSDL_0000864>
+    </j.1:MSDL_0000876>
+    <j.1:MSDL_0000874>
+      <j.1:MSDL_0000194>
+        <j.0:IAO_0000417>
+          <j.1:MSDL_0000150>
+            <j.0:IAO_0000004>90</j.0:IAO_0000004>
+          </j.1:MSDL_0000150>
+        </j.0:IAO_0000417>
+      </j.1:MSDL_0000194>
+    </j.1:MSDL_0000874>
+    <j.1:MSDL_0000679>
+      <j.1:MSDL_0000090 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001045>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Medium</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic tool design skill</rdfs:label>
+              </j.1:MSDL_0001045>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000769 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000793"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV-100-120-VerticalMill"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/tool_steel_capability"/>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Mazak-FJV5Face-60-160-VerticalMill"/>
+        <j.1:MSDL_0000770 rdf:resource="http://infoneer.txstate.edu/ontology/Al_1000_series_capability"/>
+        <rdfs:comment xml:lang="en">
+----- XL Machine Company factory information -----
+Equipment: Generic-Milling-Machine
+Equipment: Mazak-FJV53560VerticalMill
+Equipment: Mazak-FJV5Face-60-160-VerticalMill
+Equipment: Mazak-FJV-100-120-VerticalMill
+Industry: medical devices
+Material: Al 1000 series capability
+Material: tool steel capability
+Skill (medium): generic manual turning skill
+Skill (medium): generic CAD skill
+Skill (medium): generic tool design skill
+</rdfs:comment>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001050>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Medium</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic manual turning skill</rdfs:label>
+              </j.1:MSDL_0001050>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL#MSDL_0000388"/>
+        <rdfs:label xml:lang="en">XL Machine Company factory</rdfs:label>
+        <j.1:MSDL_0000129 rdf:resource="http://infoneer.txstate.edu/ontology/Generic-MillingMachine"/>
+        <j.0:BFO_0000051>
+          <j.1:MSDL_0001062>
+            <j.1:MSDL_0001059>
+              <j.1:MSDL_0001039>
+                <j.1:MSDL_0000924>
+                  <j.1:MSDL_0000926>
+                    <j.0:IAO_0000004>Medium</j.0:IAO_0000004>
+                  </j.1:MSDL_0000926>
+                </j.1:MSDL_0000924>
+                <rdfs:label xml:lang="en">generic CAD skill</rdfs:label>
+              </j.1:MSDL_0001039>
+            </j.1:MSDL_0001059>
+          </j.1:MSDL_0001062>
+        </j.0:BFO_0000051>
+      </j.1:MSDL_0000090>
+    </j.1:MSDL_0000679>
+    <j.1:MSDL_0000875>
+      <j.1:MSDL_0000841>
+        <rdfs:label xml:lang="en">Michigan</rdfs:label>
+      </j.1:MSDL_0000841>
+    </j.1:MSDL_0000875>
+    <rdfs:label xml:lang="en">XL Machine Company</rdfs:label>
+    <rdfs:comment xml:lang="en">
+----- XL Machine Company company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: XL Machine Company
+Employee count: 90
+Year founded: 1976
+Web address: https://www.xlmachine.com/
+State address: Michigan
+Zip address: 49072
+Operates: XL Machine Company factory
+</rdfs:comment>
+  </j.1:MSDL_0000873>
+</rdf:RDF>

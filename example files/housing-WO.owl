@@ -1,0 +1,105 @@
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://purl.obolibrary.org/obo/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.1="http://infoneer.txstate.edu/ontology/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+  <j.1:MSDL_0001012 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999998">
+    <rdfs:comment xml:lang="en">
+----- housing work order information -----
+Issued by: Default
+</rdfs:comment>
+    <j.1:MSDL_0001077>
+      <j.1:MSDL_0000873 rdf:about="http://infoneer.txstate.edu/ontology/MSDL_9999999">
+        <rdfs:comment xml:lang="en">
+----- Default company information -----
+Business type: Small business manufacturing company
+Company type: Contract manufacturer
+Name: Default
+Web address: https://en.wikipedia.org/wiki/Factory
+</rdfs:comment>
+        <rdfs:label xml:lang="en">Default</rdfs:label>
+        <j.1:MSDL_0000876>
+          <j.1:MSDL_0000864>
+            <rdfs:label xml:lang="en">https://en.wikipedia.org/wiki/Factory</rdfs:label>
+          </j.1:MSDL_0000864>
+        </j.1:MSDL_0000876>
+        <j.1:MSDL_0000149>
+          <j.1:MSDL_0000878>
+            <rdfs:label xml:lang="en">Default</rdfs:label>
+          </j.1:MSDL_0000878>
+        </j.1:MSDL_0000149>
+        <j.1:MSDL_0000877 rdf:resource="http://infoneer.txstate.edu/ontology/MSDL_0000866"/>
+      </j.1:MSDL_0000873>
+    </j.1:MSDL_0001077>
+    <j.0:IAO_0000136>
+      <j.1:MSDL_0001014>
+        <rdfs:label xml:lang="en">housing</rdfs:label>
+        <j.1:MSDL_0001016>
+          <j.1:MSDL_0000919>
+            <rdfs:label xml:lang="en">30</rdfs:label>
+          </j.1:MSDL_0000919>
+        </j.1:MSDL_0001016>
+        <rdfs:comment xml:lang="en">
+----- housing work order component information -----
+Specified output (part): housing
+Requires capability (production volume): Medium
+Requires capability (lower tolerance): .01
+Requires capability (upper tolerance): .01
+Requires capability (max diameter): 30
+Requires capability (max length): 30
+Requires capability (surface roughness): 30
+Requires capability (min wall thickness): .2
+Requires capability (part weight): 100
+Requires capability (material capability): stainless steel capability
+Requires capability (process capability): drilling function
+Requires capability (process capability): end milling function
+</rdfs:comment>
+        <j.0:OBI_0000299>
+          <j.1:MSDL_0000027>
+            <rdfs:label xml:lang="en">housing</rdfs:label>
+          </j.1:MSDL_0000027>
+        </j.0:OBI_0000299>
+        <j.1:MSDL_0001074>
+          <j.1:MSDL_0000675>
+            <rdfs:label xml:lang="en">.01</rdfs:label>
+          </j.1:MSDL_0000675>
+        </j.1:MSDL_0001074>
+        <j.1:MSDL_0001075>
+          <j.1:MSDL_0000675>
+            <rdfs:label xml:lang="en">.01</rdfs:label>
+          </j.1:MSDL_0000675>
+        </j.1:MSDL_0001075>
+        <j.1:MSDL_0001016>
+          <j.1:MSDL_0000955>
+            <rdfs:label xml:lang="en">100</rdfs:label>
+          </j.1:MSDL_0000955>
+        </j.1:MSDL_0001016>
+        <j.1:MSDL_0001016>
+          <j.1:MSDL_0000920>
+            <rdfs:label xml:lang="en">30</rdfs:label>
+          </j.1:MSDL_0000920>
+        </j.1:MSDL_0001016>
+        <j.1:MSDL_0001016>
+          <j.1:MSDL_0000674>
+            <rdfs:label xml:lang="en">30</rdfs:label>
+          </j.1:MSDL_0000674>
+        </j.1:MSDL_0001016>
+        <j.1:MSDL_0001016 rdf:resource="http://infoneer.txstate.edu/ontology/stainless_steel_capability"/>
+        <j.1:MSDL_0001016 rdf:resource="http://infoneer.txstate.edu/ontology/drilling_function"/>
+        <j.1:MSDL_0001016>
+          <j.1:MSDL_0000921>
+            <rdfs:label xml:lang="en">.2</rdfs:label>
+          </j.1:MSDL_0000921>
+        </j.1:MSDL_0001016>
+        <j.1:MSDL_0001016>
+          <j.1:MSDL_0000925>
+            <rdfs:label xml:lang="en">Medium</rdfs:label>
+          </j.1:MSDL_0000925>
+        </j.1:MSDL_0001016>
+        <j.1:MSDL_0001016 rdf:resource="http://infoneer.txstate.edu/ontology/end_milling_function"/>
+      </j.1:MSDL_0001014>
+    </j.0:IAO_0000136>
+  </j.1:MSDL_0001012>
+</rdf:RDF>
